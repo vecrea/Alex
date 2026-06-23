@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Les Brumes d'Eldoria — Jeu d'aventure</title>
+<style>
+  :root{
+    --bg:#0d0b14; --panel:#161324; --panel2:#1f1a30;
+    --ink:#e8e3f0; --muted:#9a90b8; --accent:#c9a227; --accent2:#7b5cff;
+    --danger:#e0556b; --good:#46c98b; --border:#2c2640;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 800px at 70% -10%, #221a3a 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    display:flex; align-items:center; justify-content:center; min-height:100%;
+    padding:24px;
+  }
+  .game{
+    width:min(760px,100%);
+    background:linear-gradient(180deg,var(--panel),#120f1f);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
+    overflow:hidden;
+  }
+  header{
+    padding:22px 26px 16px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,rgba(123,92,255,.10),transparent);
+  }
+  h1{
+    margin:0; font-size:25px; letter-spacing:.5px;
+    background:linear-gradient(90deg,var(--accent),#f3dd8e);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .sub{color:var(--muted); font-size:13px; margin-top:4px; font-family:system-ui,sans-serif}
+  .stats{
+    display:flex; gap:10px; flex-wrap:wrap; padding:14px 26px;
+    border-bottom:1px solid var(--border); font-family:system-ui,sans-serif; font-size:12.5px;
+  }
+  .chip{
+    background:var(--panel2); border:1px solid var(--border);
+    padding:6px 11px; border-radius:999px; color:var(--muted);
+  }
+  .chip b{color:var(--ink)}
+  .chip .hp{color:var(--good)}
+  .scene{padding:24px 26px 8px; min-height:120px}
+  .where{font-family:system-ui,sans-serif; font-size:12px; text-transform:uppercase;
+    letter-spacing:2px; color:var(--accent2); margin-bottom:10px}
+  .text{font-size:17px; line-height:1.65}
+  .text p{margin:0 0 12px}
+  .text .ev{color:var(--accent); font-style:italic}
+  .choices{padding:8px 26px 26px; display:flex; flex-direction:column; gap:10px}
+  button.choice{
+    text-align:left; font:inherit; font-size:16px;
+    background:var(--panel2); color:var(--ink);
+    border:1px solid var(--border); border-radius:12px;
+    padding:14px 16px; cursor:pointer; transition:.15s;
+    display:flex; align-items:center; gap:10px;
+  }
+  button.choice:hover{border-color:var(--accent2); transform:translateX(3px);
+    background:#251f3a}
+  button.choice .arrow{color:var(--accent2)}
+  button.choice:disabled{opacity:.4; cursor:not-allowed; transform:none}
+  .restart{
+    font-family:system-ui,sans-serif; font-size:13px; background:none;
+    border:1px solid var(--border); color:var(--muted); padding:9px 14px;
+    border-radius:10px; cursor:pointer; margin-top:4px; align-self:flex-start;
+  }
+  .restart:hover{color:var(--ink); border-color:var(--accent)}
+  .end{color:var(--accent); font-weight:bold}
+  .death{color:var(--danger)}
+  .win{color:var(--good)}
+  footer{padding:12px 26px; border-top:1px solid var(--border);
+    color:var(--muted); font-size:11.5px; font-family:system-ui,sans-serif; text-align:center}
+</style>
+</head>
+<body>
+<div class="game">
+  <header>
+    <h1>⚔ Les Brumes d'Eldoria</h1>
+    <div class="sub">Un jeu d'aventure textuel · vos choix décident de votre destin</div>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div class="scene">
+    <div class="where" id="where"></div>
+    <div class="text" id="text"></div>
+  </div>
+  <div class="choices" id="choices"></div>
+  <footer>Astuce : explorez, ramassez les objets et réfléchissez avant d'agir. Plusieurs fins vous attendent.</footer>
+</div>
+
+<script>
+/* ====== État du joueur ====== */
+const start = () => ({ pv:5, or:0, inv:[], flags:{}, scene:"intro" });
+let S = start();
+
+const has = id => S.inv.includes(id);
+const add = id => { if(!has(id)) S.inv.push(id); };
+const drop = id => { S.inv = S.inv.filter(x=>x!==id); };
+const noms = { torche:"🔥 Torche", epee:"🗡 Épée runique", cle:"🔑 Clé rouillée",
+  amulette:"📿 Amulette", potion:"🧪 Potion", pain:"🍞 Pain", carte:"🗺 Carte" };
+
+/* ====== Les scènes ====== */
+const scenes = {
+  intro:{
+    lieu:"Lisière de la forêt",
+    txt:()=>`<p>La pluie tambourine sur votre capuche. Devant vous s'étend la <span class="ev">forêt des Brumes</span>, où dit-on dort encore l'épée d'Eldoria, capable de briser la malédiction qui ronge votre village.</p>
+            <p>Un vieux panneau de bois pourri indique deux directions : un sentier boueux qui s'enfonce dans les arbres, et un raccourci vers une grotte sombre d'où monte une odeur de soufre.</p>`,
+    choix:[
+      {t:"Prendre le sentier boueux", go:"sentier"},
+      {t:"Entrer dans la grotte sombre", go:"grotte"},
+      {t:"Fouiller sous le panneau", go:"panneau"},
+    ]
+  },
+  panneau:{
+    lieu:"Lisière de la forêt",
+    txt:()=>{ if(!has("torche")){ add("torche"); return `<p>En soulevant une planche, vous trouvez une <span class="ev">torche</span> encore sèche et un briquet à silex. Précieux dans l'obscurité.</p>`; }
+              return `<p>Il n'y a plus rien d'utile sous le panneau.</p>`; },
+    choix:[
+      {t:"Prendre le sentier boueux", go:"sentier"},
+      {t:"Entrer dans la grotte sombre", go:"grotte"},
+    ]
+  },
+  sentier:{
+    lieu:"Cœur de la forêt",
+    txt:()=>`<p>Les arbres se referment au-dessus de vous. Au détour du chemin, un <span class="ev">vieil ermite</span> est assis près d'un feu mourant. « Voyageur... la nuit, les loups rôdent. Une lame nue les fait fuir. »</p>`,
+    choix:[
+      {t:"Parler à l'ermite", go:"ermite"},
+      {t:"Continuer vers la clairière", go:"clairiere"},
+    ]
+  },
+  ermite:{
+    lieu:"Le feu de l'ermite",
+    txt:()=>{ if(!S.flags.ermite){ S.flags.ermite=true; add("pain"); return `<p>L'ermite vous tend un morceau de <span class="ev">pain</span>. « Pour la route. Au cœur de la clairière dort une stèle ; pose-y la bonne offrande et le passage s'ouvrira. L'or les flatte, mais c'est l'amulette des anciens qu'elle réclame vraiment. »</p>`; }
+              return `<p>« Je t'ai dit tout ce que je sais, voyageur. Va, et reviens vivant. »</p>`; },
+    choix:[
+      {t:"Continuer vers la clairière", go:"clairiere"},
+      {t:"Revenir à la lisière", go:"intro"},
+    ]
+  },
+  grotte:{
+    lieu:"La grotte de soufre",
+    txt:()=>{
+      if(!has("torche")) return `<p class="death">L'obscurité est totale. Vous avancez à tâtons... et le sol se dérobe. Vous tombez dans un gouffre sans fond.</p>`;
+      if(!S.flags.grotte){ S.flags.grotte=true; add("cle"); return `<p>La lueur de votre torche révèle des parois couvertes de cristaux. Sur un autel de pierre brillent une <span class="ev">clé rouillée</span> et trois pièces d'or que vous empochez.</p>`; }
+      return `<p>L'autel est vide à présent. Au fond, un tunnel descend vers la clairière.</p>`;
+    },
+    onEnter:()=>{ if(has("torche") && !S.flags.grotteOr){ S.flags.grotteOr=true; S.or+=3; } },
+    choix:()=>{
+      if(!has("torche")) return [{t:"— Recommencer —", restart:true}];
+      return [
+        {t:"Examiner le tunnel du fond", go:"clairiere"},
+        {t:"Ressortir vers la lisière", go:"intro"},
+      ];
+    }
+  },
+  clairiere:{
+    lieu:"La clairière de la stèle",
+    txt:()=>`<p>Une clairière baignée d'une lumière laiteuse. En son centre, une <span class="ev">stèle</span> gravée de runes attend une offrande. Derrière elle, une lourde porte de pierre scelle l'entrée d'un temple.</p>
+            ${has("amulette")?`<p>Votre amulette tiède vibre à l'approche de la stèle.</p>`:``}`,
+    choix:()=>{
+      const c=[];
+      if(has("amulette")) c.push({t:"Offrir l'amulette à la stèle", go:"temple_ouvert"});
+      if(S.or>0) c.push({t:"Déposer votre or sur la stèle", go:"piege_or"});
+      if(has("cle")) c.push({t:"Essayer la clé rouillée sur la porte", go:"porte_cle"});
+      c.push({t:"Chercher une amulette alentour", go:"fourre"});
+      return c;
+    }
+  },
+  fourre:{
+    lieu:"Fourré près de la stèle",
+    txt:()=>{
+      if(has("amulette")) return `<p>Vous avez déjà l'amulette en main.</p>`;
+      if(S.flags.loup){ return `<p>Le fourré est silencieux désormais.</p>`; }
+      S.flags.loup=true;
+      if(has("epee")){ add("amulette"); return `<p>Un <span class="ev">loup</span> bondit ! D'un revers de votre épée runique, vous le repoussez. À son cou pendait une <span class="ev">amulette</span> ancienne : elle est à vous.</p>`; }
+      S.pv-=2; if(S.pv<=0) return `<p class="death">Un loup surgit du fourré et vous terrasse avant que vous puissiez fuir. Le noir vous engloutit.</p>`;
+      add("amulette");
+      return `<p>Un <span class="ev">loup</span> jaillit ! Vous le chassez à coups de pied, le bras lacéré (<b>−2 PV</b>). Dans sa tanière, vous trouvez une <span class="ev">amulette</span> ancienne.</p>`;
+    },
+    choix:()=>{ if(S.pv<=0) return [{t:"— Recommencer —", restart:true}];
+      return [{t:"Retourner à la stèle", go:"clairiere"}]; }
+  },
+  piege_or:{
+    lieu:"La stèle",
+    txt:()=>`<p>Vos pièces tintent sur la pierre. Les runes rougeoient... puis la stèle <span class="ev">engloutit votre or</span> sans ouvrir la porte. L'ermite avait raison : ce n'est pas ce qu'elle voulait.</p>`,
+    onEnter:()=>{ S.or=0; },
+    choix:[{t:"Réfléchir et revenir", go:"clairiere"}]
+  },
+  porte_cle:{
+    lieu:"Porte du temple",
+    txt:()=>`<p>La clé rouillée grince mais refuse de tourner : cette porte n'obéit qu'à la magie de la stèle, pas au métal. Vous remarquez toutefois une petite trappe latérale qu'elle pourrait ouvrir.</p>`,
+    choix:[
+      {t:"Ouvrir la trappe latérale avec la clé", go:"reserve"},
+      {t:"Revenir à la stèle", go:"clairiere"},
+    ]
+  },
+  reserve:{
+    lieu:"Réserve cachée",
+    txt:()=>{ if(!S.flags.reserve){ S.flags.reserve=true; add("potion"); return `<p>Une réserve poussiéreuse. Sur une étagère, une <span class="ev">potion de soin</span> luit faiblement. Vous la glissez dans votre sac.</p>`; }
+              return `<p>La réserve est vide à présent.</p>`; },
+    choix:[{t:"Revenir à la stèle", go:"clairiere"}]
+  },
+  temple_ouvert:{
+    lieu:"Seuil du temple",
+    txt:()=>`<p>L'amulette se dissout en lumière. Dans un grondement, la <span class="ev">porte de pierre s'ouvre</span>. Un souffle glacé monte des profondeurs : le gardien d'Eldoria vous attend.</p>`,
+    onEnter:()=>{ drop("amulette"); },
+    choix:[{t:"Descendre dans le temple", go:"gardien"}]
+  },
+  gardien:{
+    lieu:"Sanctuaire d'Eldoria",
+    txt:()=>`<p>Au fond du sanctuaire, l'<span class="ev">épée d'Eldoria</span> flotte dans un halo. Devant elle se dresse un <span class="ev">gardien de pierre</span> aux yeux de braise. « Nul ne prend la lame sans répondre. Que vainc l'obscurité sans jamais brûler ? »</p>`,
+    choix:[
+      {t:"« La lumière. »", go:"victoire_sage"},
+      {t:"« Le feu. »", go:"combat_gardien"},
+      {t:"« Le courage. »", go:"combat_gardien"},
+    ]
+  },
+  combat_gardien:{
+    lieu:"Sanctuaire d'Eldoria",
+    txt:()=>{
+      if(has("epee")){ return `<p>Mauvaise réponse. Le gardien s'anime ! Mais votre <span class="ev">épée runique</span> mord la pierre et le fait voler en éclats. La voie est libre.</p>`; }
+      S.pv-=3;
+      if(has("potion")){ drop("potion"); S.pv+=3; return `<p>Le gardien vous frappe (<b>−3 PV</b>) ! D'un geste, vous buvez votre <span class="ev">potion</span> et tenez bon, puis vous esquivez jusqu'à la lame.</p>`; }
+      if(S.pv<=0) return `<p class="death">Le poing de pierre du gardien s'abat. Vous n'aviez ni la bonne réponse, ni de quoi survivre. Eldoria garde son secret.</p>`;
+      return `<p>Le gardien vous assène un coup terrible (<b>−3 PV</b>). Titubant, vous vous jetez vers l'épée dans un dernier élan.</p>`;
+    },
+    choix:()=>{ if(S.pv<=0 && !has("epee")) return [{t:"— Recommencer —", restart:true}];
+      return [{t:"Saisir l'épée d'Eldoria", go:"victoire"}]; }
+  },
+  victoire_sage:{
+    lieu:"Sanctuaire d'Eldoria",
+    txt:()=>`<p>« La lumière », répondez-vous. Les yeux de braise du gardien s'éteignent doucement. « Sage voyageur. » Il s'incline et se fige, libérant la lame.</p>`,
+    choix:[{t:"Saisir l'épée d'Eldoria", go:"victoire"}]
+  },
+  victoire:{
+    lieu:"★ Fin",
+    txt:()=>{ add("epee");
+      const sage=S.scene==="victoire"&&!S.flags.combat;
+      return `<p class="win">Vos doigts se referment sur la garde de l'<span class="ev">épée d'Eldoria</span>. Une chaleur ancienne remonte dans votre bras. La malédiction de votre village a trouvé son remède.</p>
+      <p class="end">Vous remontez vers la lumière du jour, héros d'Eldoria${S.or>0?`, et ${S.or} pièces d'or tintent encore dans votre bourse`:``}. <b>VICTOIRE.</b></p>`;
+    },
+    onEnter:()=>{ S.flags.win=true; },
+    choix:[{t:"⟳ Rejouer une nouvelle aventure", restart:true}]
+  },
+};
+
+/* ====== Moteur ====== */
+const $ = id => document.getElementById(id);
+
+function renderStats(){
+  const pvc = "♥".repeat(Math.max(0,S.pv)) + "♡".repeat(Math.max(0,5-S.pv));
+  let html = `<span class="chip"><b class="hp">${pvc}</b></span>`;
+  html += `<span class="chip">Or : <b>${S.or}</b></span>`;
+  if(S.inv.length){
+    html += S.inv.map(i=>`<span class="chip">${noms[i]||i}</span>`).join("");
+  } else {
+    html += `<span class="chip">Sac vide</span>`;
+  }
+  $("stats").innerHTML = html;
+}
+
+function goto(id){
+  S.scene = id;
+  const sc = scenes[id];
+  if(sc.onEnter) sc.onEnter();
+  renderStats();
+  $("where").textContent = sc.lieu;
+  $("text").innerHTML = (typeof sc.txt==="function") ? sc.txt() : sc.txt;
+  renderStats(); // re-render after txt side-effects (items/pv)
+  const choix = (typeof sc.choix==="function") ? sc.choix() : sc.choix;
+  $("choices").innerHTML = "";
+  choix.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "choice";
+    b.innerHTML = `<span class="arrow">▸</span> ${c.t}`;
+    b.onclick = ()=>{ if(c.restart){ S=start(); goto("intro"); } else goto(c.go); };
+    $("choices").appendChild(b);
+  });
+}
+
+goto("intro");
+</script>
+</body>
+</html>
