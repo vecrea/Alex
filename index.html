@@ -90,11 +90,15 @@ window.addEventListener('error', e=>{
     '<p style="font-size:13px">👉 Ouvre <b>index.html</b> en local, ou utilise la version GitHub&nbsp;Pages.</p>';
 }, true);
 </script>
-<script type="importmap">
-{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
-</script>
 <script type="module">
-import * as THREE from 'three';
+// Import direct par URL (pas d'importmap : il serait ignore si la page est injectee, ex. htmlpreview)
+// avec CDN de secours si le premier est bloque.
+let THREE;
+try{
+  THREE = await import('https://unpkg.com/three@0.160.0/build/three.module.js');
+}catch(_){
+  THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
+}
 
 // ---------------------------------------------------------------------------
 //  Réglages du monde
