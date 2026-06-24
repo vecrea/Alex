@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Les Brumes d'Eldoria — The Mists of Eldoria</title>
+<title>Les Brumes d'Eldoria — RPG</title>
 <style>
   :root{
     --bg:#0d0b14; --panel:#161324; --panel2:#1f1a30;
     --ink:#e8e3f0; --muted:#9a90b8; --accent:#c9a227; --accent2:#7b5cff;
-    --danger:#e0556b; --good:#46c98b; --border:#2c2640;
+    --danger:#e0556b; --good:#46c98b; --mana:#4aa3ff; --border:#2c2640;
   }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
@@ -16,84 +16,88 @@
     background:radial-gradient(1200px 800px at 70% -10%, #221a3a 0%, var(--bg) 60%);
     color:var(--ink);
     font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-    display:flex; align-items:center; justify-content:center; min-height:100%;
-    padding:24px;
+    display:flex; align-items:center; justify-content:center; min-height:100%; padding:24px;
   }
   .game{
-    width:min(780px,100%);
+    width:min(800px,100%);
     background:linear-gradient(180deg,var(--panel),#120f1f);
-    border:1px solid var(--border);
-    border-radius:18px;
+    border:1px solid var(--border); border-radius:18px;
     box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
     overflow:hidden;
   }
   header{
-    padding:18px 26px 14px;
-    border-bottom:1px solid var(--border);
+    padding:18px 26px 14px; border-bottom:1px solid var(--border);
     background:linear-gradient(180deg,rgba(123,92,255,.10),transparent);
     display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
   }
-  h1{
-    margin:0; font-size:24px; letter-spacing:.5px;
+  h1{margin:0; font-size:23px; letter-spacing:.5px;
     background:linear-gradient(90deg,var(--accent),#f3dd8e);
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-  }
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
   .sub{color:var(--muted); font-size:13px; margin-top:4px; font-family:system-ui,sans-serif}
   .toolbar{display:flex; gap:6px; flex-shrink:0}
-  .tool{
-    font-family:system-ui,sans-serif; font-size:12px; background:var(--panel2);
-    border:1px solid var(--border); color:var(--muted); padding:7px 10px;
-    border-radius:9px; cursor:pointer;
-  }
+  .tool{font-family:system-ui,sans-serif; font-size:12px; background:var(--panel2);
+    border:1px solid var(--border); color:var(--muted); padding:7px 10px; border-radius:9px; cursor:pointer;}
   .tool:hover{color:var(--ink); border-color:var(--accent2)}
   .tool.on{color:var(--accent); border-color:var(--accent)}
-  .stats{
-    display:flex; gap:8px; flex-wrap:wrap; padding:13px 26px;
-    border-bottom:1px solid var(--border); font-family:system-ui,sans-serif; font-size:12.5px;
-  }
-  .chip{
-    background:var(--panel2); border:1px solid var(--border);
-    padding:6px 11px; border-radius:999px; color:var(--muted);
-  }
+  .stats{display:flex; gap:8px; flex-wrap:wrap; padding:13px 26px;
+    border-bottom:1px solid var(--border); font-family:system-ui,sans-serif; font-size:12.5px;}
+  .chip{background:var(--panel2); border:1px solid var(--border); padding:6px 11px;
+    border-radius:999px; color:var(--muted)}
   .chip b{color:var(--ink)}
   .chip .hp{color:var(--good); letter-spacing:1px}
+  .chip .en{color:var(--mana); letter-spacing:1px}
+  .xpwrap{flex:1 1 140px; min-width:120px; display:flex; align-items:center; gap:8px;
+    background:var(--panel2); border:1px solid var(--border); padding:5px 11px; border-radius:999px}
+  .xpwrap small{color:var(--muted); white-space:nowrap}
+  .xpbar{flex:1; height:7px; background:#2a2440; border-radius:6px; overflow:hidden}
+  .xpbar>i{display:block; height:100%; background:linear-gradient(90deg,var(--accent2),#b59bff); transition:width .35s}
   .scene{padding:22px 26px 8px; min-height:120px}
   .where{font-family:system-ui,sans-serif; font-size:12px; text-transform:uppercase;
-    letter-spacing:2px; color:var(--accent2); margin-bottom:10px;
-    display:flex; align-items:center; gap:8px}
+    letter-spacing:2px; color:var(--accent2); margin-bottom:10px; display:flex; align-items:center; gap:8px}
   .act{font-size:10px; background:var(--panel2); border:1px solid var(--border);
     padding:2px 8px; border-radius:999px; letter-spacing:1px}
   .text{font-size:17px; line-height:1.65}
   .text p{margin:0 0 12px}
   .text .ev{color:var(--accent); font-style:italic}
+  .text .say{color:#d7cdf3}
   .choices{padding:8px 26px 24px; display:flex; flex-direction:column; gap:10px}
-  button.choice{
-    text-align:left; font:inherit; font-size:16px;
-    background:var(--panel2); color:var(--ink);
-    border:1px solid var(--border); border-radius:12px;
-    padding:13px 16px; cursor:pointer; transition:.15s;
-    display:flex; align-items:center; gap:10px;
-  }
+  button.choice{text-align:left; font:inherit; font-size:16px; background:var(--panel2); color:var(--ink);
+    border:1px solid var(--border); border-radius:12px; padding:13px 16px; cursor:pointer; transition:.15s;
+    display:flex; align-items:center; gap:10px;}
   button.choice:hover{border-color:var(--accent2); transform:translateX(3px); background:#251f3a}
   button.choice .arrow{color:var(--accent2)}
   button.choice.atk:hover{border-color:var(--danger)}
   button.choice.def:hover{border-color:var(--accent)}
   button.choice.heal:hover{border-color:var(--good)}
-  /* combat */
-  .enemy{
-    margin:0 26px 14px; padding:14px 16px; border:1px solid var(--border);
-    border-radius:12px; background:linear-gradient(180deg,rgba(224,85,107,.10),transparent);
-    font-family:system-ui,sans-serif;
-  }
+  button.choice.skill{border-color:#3a2f5e; background:#241d3c}
+  button.choice.skill:hover{border-color:var(--mana)}
+  button.choice:disabled{opacity:.4; cursor:not-allowed; transform:none}
+  button.choice .hint{margin-left:auto; font-family:system-ui,sans-serif; font-size:12px; color:var(--muted)}
+  /* création */
+  .create{padding:20px 26px 8px}
+  .create label{display:block; font-family:system-ui,sans-serif; font-size:13px; color:var(--muted); margin:0 0 6px}
+  .create input{width:100%; font:inherit; font-size:17px; padding:12px 14px; border-radius:12px;
+    background:var(--panel2); border:1px solid var(--border); color:var(--ink); margin-bottom:16px}
+  .create input:focus{outline:none; border-color:var(--accent2)}
+  .classes{display:grid; grid-template-columns:1fr; gap:10px}
+  @media(min-width:560px){.classes{grid-template-columns:1fr 1fr 1fr}}
+  .cls{cursor:pointer; border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--panel2); transition:.15s}
+  .cls:hover{border-color:var(--accent2); transform:translateY(-2px)}
+  .cls.sel{border-color:var(--accent); background:#251f3a}
+  .cls .ic{font-size:26px}
+  .cls .nm{font-weight:bold; margin:6px 0 2px}
+  .cls .ds{font-family:system-ui,sans-serif; font-size:12px; color:var(--muted); line-height:1.5}
+  .enemy{margin:0 26px 14px; padding:14px 16px; border:1px solid var(--border); border-radius:12px;
+    background:linear-gradient(180deg,rgba(224,85,107,.10),transparent); font-family:system-ui,sans-serif}
   .enemy .en{font-weight:600; font-size:15px}
   .bar{height:10px; background:#2a2440; border-radius:6px; overflow:hidden; margin-top:8px}
-  .bar > i{display:block; height:100%; background:linear-gradient(90deg,var(--danger),#ff8a9c); transition:width .3s}
+  .bar>i{display:block; height:100%; background:linear-gradient(90deg,var(--danger),#ff8a9c); transition:width .3s}
   .log{margin:8px 26px 0; font-family:system-ui,sans-serif; font-size:13px; color:var(--muted); min-height:18px}
-  .log .hit{color:var(--danger)} .log .you{color:var(--good)} .log .crit{color:var(--accent)}
+  .log .hit{color:var(--danger)} .log .you{color:var(--good)} .log .crit{color:var(--accent)} .log .lvl{color:var(--accent2)}
   .end{color:var(--accent); font-weight:bold}
   .death{color:var(--danger)} .win{color:var(--good)}
-  footer{padding:11px 26px; border-top:1px solid var(--border);
-    color:var(--muted); font-size:11.5px; font-family:system-ui,sans-serif; text-align:center}
+  footer{padding:11px 26px; border-top:1px solid var(--border); color:var(--muted);
+    font-size:11.5px; font-family:system-ui,sans-serif; text-align:center}
   .saved{color:var(--good)!important}
 </style>
 </head>
@@ -124,387 +128,439 @@
 
 <script>
 /* =========================================================================
-   LES BRUMES D'ELDORIA — moteur d'aventure bilingue
-   Fonctions : i18n FR/EN · sauvegarde localStorage · combat au tour par tour
-               · son synthétisé (Web Audio) · 3 actes / multiples cartes
+   LES BRUMES D'ELDORIA — RPG bilingue
+   Création de personnage · classes & compétences · niveaux/XP · combat tour
+   par tour · sauvegarde · sons synthétisés. Tout dans un seul fichier.
    ========================================================================= */
 
 /* ---------- i18n ---------- */
-let LANG = "fr";
-const t = o => (typeof o === "string" ? o : (o[LANG] ?? o.fr));
+let LANG="fr";
+const t = o => (typeof o==="string" ? o : (typeof o==="function"? o() : (o[LANG] ?? o.fr)));
+const nm = () => S.name || (LANG==="fr"?"Voyageur":"Traveler");
+
 const UI = {
-  tagline:{fr:"Jeu d'aventure · vos choix décident de votre destin",
-           en:"An adventure game · your choices decide your fate"},
-  save:{fr:"💾 Sauver", en:"💾 Save"},
-  saved:{fr:"✓ Sauvé", en:"✓ Saved"},
-  reset:{fr:"⟳ Recommencer", en:"⟳ Restart"},
-  footer:{fr:"Astuce : explorez, équipez-vous et choisissez vos combats. La partie est sauvegardée automatiquement.",
-          en:"Tip: explore, gear up and pick your fights. Your game saves automatically."},
-  bagEmpty:{fr:"Sac vide", en:"Empty bag"},
-  gold:{fr:"Or", en:"Gold"},
-  restartBtn:{fr:"— Recommencer —", en:"— Restart —"},
+  tagline:{fr:"Jeu de rôle · forge ton héros, brise la malédiction",
+           en:"A role-playing game · forge your hero, break the curse"},
+  save:{fr:"💾 Sauver",en:"💾 Save"}, saved:{fr:"✓ Sauvé",en:"✓ Saved"},
+  reset:{fr:"⟳ Nouveau",en:"⟳ New"},
+  bagEmpty:{fr:"Sac vide",en:"Empty bag"}, gold:{fr:"Or",en:"Gold"},
+  lvl:{fr:"Niv.",en:"Lv."}, restartBtn:{fr:"— Recommencer —",en:"— Restart —"},
+  // création
+  createTitle:{fr:"Création de ton héros",en:"Create your hero"},
+  whoTitle:{fr:"Avant de partir dans les Brumes...",en:"Before you enter the Mists..."},
+  whoText:{fr:"<p>Le destin d'Eldoria reposera bientôt sur tes épaules. Mais d'abord, dis-moi : <span class=\"ev\">qui es-tu ?</span></p>",
+           en:"<p>The fate of Eldoria will soon rest on your shoulders. But first, tell me: <span class=\"ev\">who are you?</span></p>"},
+  nameLabel:{fr:"Ton nom",en:"Your name"},
+  namePlaceholder:{fr:"Entre ton nom de héros...",en:"Enter your hero's name..."},
+  classLabel:{fr:"Ta voie",en:"Your path"},
+  begin:{fr:"⚔ Commencer l'aventure",en:"⚔ Begin the adventure"},
+  resume:{fr:"▸ Reprendre ma partie",en:"▸ Resume my game"},
+  newGame:{fr:"✦ Nouvelle partie",en:"✦ New game"},
   // combat
-  attack:{fr:"🗡 Attaquer", en:"🗡 Attack"},
-  defend:{fr:"🛡 Se défendre", en:"🛡 Defend"},
-  drink:{fr:"🧪 Boire la potion", en:"🧪 Drink potion"},
-  flee:{fr:"🏃 Fuir", en:"🏃 Flee"},
-  cYouHit:{fr:n=>`Vous frappez (−${n}).`, en:n=>`You strike (−${n}).`},
-  cYouCrit:{fr:n=>`COUP CRITIQUE ! (−${n})`, en:n=>`CRITICAL HIT! (−${n})`},
-  cEnHit:{fr:(e,n)=>`${e} vous blesse (−${n} PV).`, en:(e,n)=>`${e} wounds you (−${n} HP).`},
-  cDefend:{fr:"Vous levez votre garde.", en:"You raise your guard."},
-  cHeal:{fr:"La potion vous restaure (+3 PV).", en:"The potion restores you (+3 HP)."},
-  cNoPotion:{fr:"Vous n'avez pas de potion.", en:"You have no potion."},
-  cFled:{fr:"Vous parvenez à fuir.", en:"You manage to flee."},
-  cNoFlee:{fr:"Impossible de fuir ce combat !", en:"You cannot flee this fight!"},
-};
-const items = {
-  torche:{fr:"🔥 Torche", en:"🔥 Torch"},
-  epee:{fr:"🗡 Épée runique", en:"🗡 Runic sword"},
-  excalibur:{fr:"⚔ Épée d'Eldoria", en:"⚔ Sword of Eldoria"},
-  cle:{fr:"🔑 Clé rouillée", en:"🔑 Rusty key"},
-  amulette:{fr:"📿 Amulette", en:"📿 Amulet"},
-  potion:{fr:"🧪 Potion", en:"🧪 Potion"},
-  pain:{fr:"🍞 Pain", en:"🍞 Bread"},
-  carte:{fr:"🗺 Carte", en:"🗺 Map"},
-  bouclier:{fr:"🛡 Bouclier", en:"🛡 Shield"},
-  gemme:{fr:"💎 Gemme bleue", en:"💎 Blue gem"},
+  attack:{fr:"🗡 Attaquer",en:"🗡 Attack"},
+  defend:{fr:"🛡 Se défendre",en:"🛡 Defend"},
+  drink:{fr:"🧪 Boire une potion",en:"🧪 Drink a potion"},
+  flee:{fr:"🏃 Fuir",en:"🏃 Flee"},
+  cost:{fr:n=>`${n} én.`,en:n=>`${n} en.`},
+  cYouHit:{fr:n=>`Tu frappes (−${n}).`,en:n=>`You strike (−${n}).`},
+  cYouCrit:{fr:n=>`COUP CRITIQUE ! (−${n})`,en:n=>`CRITICAL HIT! (−${n})`},
+  cEnHit:{fr:(e,n)=>`${e} te blesse (−${n} PV).`,en:(e,n)=>`${e} wounds you (−${n} HP).`},
+  cEnMiss:{fr:e=>`Tu esquives l'attaque de ${e} !`,en:e=>`You dodge ${e}'s attack!`},
+  cDefend:{fr:"Tu lèves ta garde (dégâts réduits).",en:"You raise your guard (reduced damage)."},
+  cHeal:{fr:"La potion te restaure (+4 PV).",en:"The potion restores you (+4 HP)."},
+  cNoPotion:{fr:"Tu n'as pas de potion.",en:"You have no potion."},
+  cNoEnergy:{fr:"Pas assez d'énergie.",en:"Not enough energy."},
+  cFled:{fr:"Tu parviens à fuir.",en:"You manage to flee."},
+  cNoFlee:{fr:"Impossible de fuir ce combat !",en:"You cannot flee this fight!"},
+  cXP:{fr:n=>`Victoire ! +${n} XP.`,en:n=>`Victory! +${n} XP.`},
+  cLevelUp:{fr:l=>`⭐ NIVEAU ${l} ! PV max +2, attaque +1, soigné à fond.`,
+            en:l=>`⭐ LEVEL ${l}! Max HP +2, attack +1, fully healed.`},
 };
 
-/* ---------- son (Web Audio synthétisé, aucun fichier) ---------- */
-let SOUND = true, actx = null;
-function beep(freq, dur=0.12, type="sine", vol=0.18){
+const CLASSES = {
+  guerrier:{ic:"🛡", name:{fr:"Guerrier",en:"Warrior"},
+    desc:{fr:"Robuste et brutal. Beaucoup de PV. Compétence : Frappe puissante (gros dégâts).",
+          en:"Tough and brutal. Lots of HP. Skill: Mighty Blow (heavy damage)."},
+    pvmax:9, atk:3, energymax:6, regen:2,
+    skill:{name:{fr:"Frappe puissante",en:"Mighty Blow"}, cost:3,
+           dmg:{fr:"dégâts doublés",en:"double damage"}}},
+  mage:{ic:"🔮", name:{fr:"Mage",en:"Mage"},
+    desc:{fr:"Fragile mais dévastateur. Compétence : Boule de feu (dégâts magiques massifs).",
+          en:"Fragile but devastating. Skill: Fireball (massive magic damage)."},
+    pvmax:6, atk:2, energymax:8, regen:3,
+    skill:{name:{fr:"Boule de feu",en:"Fireball"}, cost:4,
+           dmg:{fr:"7 dégâts magiques",en:"7 magic damage"}}},
+  rodeur:{ic:"🏹", name:{fr:"Rôdeur",en:"Ranger"},
+    desc:{fr:"Agile et précis. Compétence : Tir précis (coup critique garanti + esquive).",
+          en:"Agile and precise. Skill: Precise Shot (guaranteed crit + dodge)."},
+    pvmax:7, atk:2, energymax:6, regen:2,
+    skill:{name:{fr:"Tir précis",en:"Precise Shot"}, cost:3,
+           dmg:{fr:"critique garanti + esquive",en:"guaranteed crit + dodge"}}},
+};
+
+const items = {
+  torche:{fr:"🔥 Torche",en:"🔥 Torch"}, epee:{fr:"🗡 Épée runique",en:"🗡 Runic sword"},
+  excalibur:{fr:"⚔ Épée d'Eldoria",en:"⚔ Sword of Eldoria"}, cle:{fr:"🔑 Clé rouillée",en:"🔑 Rusty key"},
+  amulette:{fr:"📿 Amulette",en:"📿 Amulet"}, potion:{fr:"🧪 Potion",en:"🧪 Potion"},
+  pain:{fr:"🍞 Pain",en:"🍞 Bread"}, carte:{fr:"🗺 Carte",en:"🗺 Map"},
+  bouclier:{fr:"🛡 Bouclier",en:"🛡 Shield"}, gemme:{fr:"💎 Gemme bleue",en:"💎 Blue gem"},
+};
+
+/* ---------- son ---------- */
+let SOUND=true, actx=null;
+function beep(freq,dur=0.12,type="sine",vol=0.18){
   if(!SOUND) return;
-  try{
-    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
     const o=actx.createOscillator(), g=actx.createGain();
-    o.type=type; o.frequency.value=freq;
-    o.connect(g); g.connect(actx.destination);
-    g.gain.setValueAtTime(vol, actx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime+dur);
+    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(vol,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
     o.start(); o.stop(actx.currentTime+dur);
   }catch(e){}
 }
-const sfx = {
+const sfx={
   click:()=>beep(440,0.06,"triangle",0.10),
-  pickup:()=>{beep(660,0.08,"sine");setTimeout(()=>beep(880,0.10,"sine"),70);},
+  pickup:()=>{beep(660,0.08);setTimeout(()=>beep(880,0.10),70);},
   hit:()=>beep(160,0.12,"sawtooth",0.20),
   player:()=>beep(520,0.09,"square",0.14),
   crit:()=>{beep(700,0.08,"square");setTimeout(()=>beep(1040,0.12,"square"),60);},
-  heal:()=>{beep(540,0.10,"sine");setTimeout(()=>beep(720,0.12,"sine"),90);},
-  win:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.18,"triangle",0.18),i*130));},
+  spell:()=>{beep(300,0.10,"sawtooth",0.16);setTimeout(()=>beep(900,0.16,"sawtooth",0.14),80);},
+  heal:()=>{beep(540,0.10);setTimeout(()=>beep(720,0.12),90);},
+  level:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.16,"triangle",0.16),i*90));},
+  win:()=>{[523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>beep(f,0.18,"triangle",0.18),i*130));},
   death:()=>{[330,247,165].forEach((f,i)=>setTimeout(()=>beep(f,0.25,"sawtooth",0.18),i*160));},
 };
 
 /* ---------- état & sauvegarde ---------- */
-const KEY = "eldoria_save_v1";
-const start = () => ({ pv:6, pvmax:6, or:0, inv:[], flags:{}, scene:"intro" });
-let S = start();
+const KEY="eldoria_rpg_v1";
+const blank = () => ({ name:"", cls:"", pv:6, pvmax:6, atk:2, energy:6, energymax:6, regen:2,
+  lvl:1, xp:0, or:0, inv:[], flags:{}, scene:"_create", started:false });
+let S = blank();
 
+const XP_TABLE=[0,20,50,90,140,200]; // xp cumulé requis pour atteindre l'index+1
 const has = id => S.inv.includes(id);
 const add = id => { if(!has(id)){ S.inv.push(id); sfx.pickup(); } };
 const drop = id => { S.inv = S.inv.filter(x=>x!==id); };
 
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify({S,LANG,SOUND})); }catch(e){} }
-function load(){
-  try{
-    const d = JSON.parse(localStorage.getItem(KEY));
-    if(d && d.S){ S=d.S; LANG=d.LANG||"fr"; SOUND=d.SOUND!==false; return true; }
-  }catch(e){}
-  return false;
+function load(){ try{ const d=JSON.parse(localStorage.getItem(KEY));
+  if(d&&d.S){ S=d.S; LANG=d.LANG||"fr"; SOUND=d.SOUND!==false; return true; } }catch(e){} return false; }
+
+function gainXP(amount){
+  S.xp += amount;
+  logAppend(t(UI.cXP)(amount),"you");
+  while(S.lvl<XP_TABLE.length && S.xp>=XP_TABLE[S.lvl]){
+    S.lvl++; S.pvmax+=2; S.atk+=1; S.pv=S.pvmax; sfx.level();
+    logAppend(t(UI.cLevelUp)(S.lvl),"lvl");
+  }
 }
 
-/* ---------- combat au tour par tour ---------- */
-let COMBAT = null; // {name, hp, hpmax, atk, win, defending}
+/* ---------- combat ---------- */
+let COMBAT=null;
+function weaponBonus(){ return has("excalibur")?3 : has("epee")?2 : 0; }
+function killCheck(){ if(COMBAT.hp<=0){ const xp=COMBAT.xp; const win=COMBAT.win; gainXP(xp);
+  COMBAT=null; $("enemyBox").innerHTML=""; sfx.win(); setTimeout(()=>goto(win),60); return true; } return false; }
+
 function playerAttack(){
-  const base = has("excalibur")?5 : has("epee")?3 : 2;
-  const crit = Math.random()<0.22;
-  const dmg = crit ? base+3 : base;
-  COMBAT.hp -= dmg;
-  if(crit){ sfx.crit(); logLine(t(UI.cYouCrit)(dmg), "crit"); }
-  else { sfx.player(); logLine(t(UI.cYouHit)(dmg), "you"); }
-  if(COMBAT.hp<=0){ endCombat(true); return; }
-  enemyTurn();
+  const crit=Math.random()<0.20;
+  let dmg=S.atk+weaponBonus(); if(crit) dmg+=3;
+  COMBAT.hp-=dmg;
+  if(crit){ sfx.crit(); logLine(t(UI.cYouCrit)(dmg),"crit"); } else { sfx.player(); logLine(t(UI.cYouHit)(dmg),"you"); }
+  if(killCheck()) return; enemyTurn();
+}
+function playerSkill(){
+  const sk=CLASSES[S.cls].skill;
+  if(S.energy<sk.cost){ logLine(t(UI.cNoEnergy),"hit"); return; }
+  S.energy-=sk.cost;
+  if(S.cls==="guerrier"){ const dmg=(S.atk+weaponBonus())*2; COMBAT.hp-=dmg; sfx.crit();
+    logLine((LANG==="fr"?"Frappe puissante ! (−":"Mighty Blow! (−")+dmg+")","crit"); }
+  else if(S.cls==="mage"){ const dmg=7; COMBAT.hp-=dmg; sfx.spell();
+    logLine((LANG==="fr"?"Boule de feu ! (−":"Fireball! (−")+dmg+")","crit"); }
+  else { const dmg=S.atk+weaponBonus()+3; COMBAT.hp-=dmg; S.flags._dodge=true; sfx.spell();
+    logLine((LANG==="fr"?"Tir précis ! (−":"Precise Shot! (−")+dmg+(LANG==="fr"?", esquive prête)":", dodge ready)"),"crit"); }
+  if(killCheck()) return; enemyTurn();
 }
 function enemyTurn(){
-  let dmg = COMBAT.atk + Math.floor(Math.random()*2);
-  if(COMBAT.defending){ dmg = Math.max(0, dmg-2); COMBAT.defending=false; }
-  if(has("bouclier")) dmg = Math.max(0, dmg-1);
-  S.pv -= dmg;
-  sfx.hit();
-  logLine(t(UI.cEnHit)(t(COMBAT.nameObj), dmg), "hit");
-  if(S.pv<=0){ renderCombat(); return death(); }
+  let dmg=COMBAT.atk+Math.floor(Math.random()*2);
+  if(S.flags._dodge){ S.flags._dodge=false; sfx.click(); logLine(t(UI.cEnMiss)(t(COMBAT.nameObj)),"you"); }
+  else {
+    if(COMBAT.defending){ dmg=Math.max(0,dmg-3); COMBAT.defending=false; }
+    if(has("bouclier")) dmg=Math.max(0,dmg-1);
+    S.pv-=dmg; sfx.hit(); logLine(t(UI.cEnHit)(t(COMBAT.nameObj),dmg),"hit");
+    if(S.pv<=0){ renderStats(); return death(); }
+  }
+  S.energy=Math.min(S.energymax,S.energy+S.regen);
   renderCombat(); save();
 }
-function playerDefend(){ COMBAT.defending=true; logLine(t(UI.cDefend)); sfx.click(); enemyTurn(); }
-function playerHeal(){
-  if(!has("potion")){ logLine(t(UI.cNoPotion)); return; }
-  drop("potion"); S.pv=Math.min(S.pvmax,S.pv+3); sfx.heal(); logLine(t(UI.cHeal),"you");
-  renderStats(); enemyTurn();
-}
-function playerFlee(){
-  if(COMBAT.noFlee){ logLine(t(UI.cNoFlee),"hit"); enemyTurn(); return; }
-  const win = COMBAT.fleeTo; COMBAT=null; sfx.click();
-  $("enemyBox").innerHTML=""; $("log").innerHTML="";
-  logLine(t(UI.cFled)); goto(win);
-}
-function endCombat(victory){
-  const nextScene = COMBAT.win;
-  COMBAT=null; $("enemyBox").innerHTML="";
-  if(victory){ sfx.win(); }
-  goto(nextScene);
-}
-function startCombat(cfg){
-  COMBAT = {nameObj:cfg.name, hp:cfg.hp, hpmax:cfg.hp, atk:cfg.atk,
-            win:cfg.win, fleeTo:cfg.fleeTo||S.scene, noFlee:!!cfg.noFlee, defending:false};
-  $("log").innerHTML=""; renderCombat();
-}
+function playerDefend(){ COMBAT.defending=true; S.energy=Math.min(S.energymax,S.energy+1); logLine(t(UI.cDefend)); sfx.click(); enemyTurn(); }
+function playerHeal(){ if(!has("potion")){ logLine(t(UI.cNoPotion),"hit"); return; }
+  drop("potion"); S.pv=Math.min(S.pvmax,S.pv+4); sfx.heal(); logLine(t(UI.cHeal),"you"); renderStats(); enemyTurn(); }
+function playerFlee(){ if(COMBAT.noFlee){ logLine(t(UI.cNoFlee),"hit"); enemyTurn(); return; }
+  const to=COMBAT.fleeTo; COMBAT=null; sfx.click(); $("enemyBox").innerHTML=""; logLine(t(UI.cFled)); setTimeout(()=>goto(to),40); }
+
+function startCombat(cfg){ COMBAT={nameObj:cfg.name, hp:cfg.hp, hpmax:cfg.hp, atk:cfg.atk, xp:cfg.xp||0,
+  win:cfg.win, fleeTo:cfg.fleeTo||S.scene, noFlee:!!cfg.noFlee, defending:false}; $("log").innerHTML=""; renderCombat(); }
 function renderCombat(){
   renderStats();
   if(!COMBAT){ $("enemyBox").innerHTML=""; return; }
-  const pct = Math.max(0, COMBAT.hp/COMBAT.hpmax*100);
-  $("enemyBox").innerHTML =
-    `<div class="enemy"><div class="en">☠ ${t(COMBAT.nameObj)} — ${Math.max(0,COMBAT.hp)}/${COMBAT.hpmax} PV</div>
-     <div class="bar"><i style="width:${pct}%"></i></div></div>`;
-  const c = $("choices"); c.innerHTML="";
-  const mk=(label,cls,fn)=>{ const b=document.createElement("button");
-    b.className="choice "+cls; b.innerHTML=`<span class="arrow">▸</span> ${label}`;
-    b.onclick=fn; c.appendChild(b); };
+  const pct=Math.max(0,COMBAT.hp/COMBAT.hpmax*100);
+  $("enemyBox").innerHTML=`<div class="enemy"><div class="en">☠ ${t(COMBAT.nameObj)} — ${Math.max(0,COMBAT.hp)}/${COMBAT.hpmax} PV</div>
+    <div class="bar"><i style="width:${pct}%"></i></div></div>`;
+  const sk=CLASSES[S.cls].skill, c=$("choices"); c.innerHTML="";
+  const mk=(label,cls,fn,hint,dis)=>{ const b=document.createElement("button"); b.className="choice "+cls;
+    b.innerHTML=`<span class="arrow">▸</span> ${label}${hint?`<span class="hint">${hint}</span>`:""}`;
+    if(dis){ b.disabled=true; } else b.onclick=fn; c.appendChild(b); };
   mk(t(UI.attack),"atk",playerAttack);
+  mk(t(sk.name),"skill",playerSkill,t(UI.cost)(sk.cost), S.energy<sk.cost);
   mk(t(UI.defend),"def",playerDefend);
   if(has("potion")) mk(t(UI.drink),"heal",playerHeal);
   mk(t(UI.flee),"",playerFlee);
 }
-function logLine(msg, cls=""){ $("log").innerHTML = `<span class="${cls}">${msg}</span>`; }
+function logLine(msg,cls=""){ $("log").innerHTML=`<span class="${cls}">${msg}</span>`; }
+function logAppend(msg,cls=""){ $("log").innerHTML+=` <span class="${cls}">${msg}</span>`; }
 
-/* ---------- les scènes (3 actes) ----------
-   Chaque scène : { lieu, act, txt(), onEnter?(), choix [|()=>] }
-   Une scène peut déclencher un combat via combat:{...}.
-*/
+/* ---------- scènes (RP, narration immersive) ---------- */
 const A1={fr:"ACTE I · La Forêt",en:"ACT I · The Forest"};
 const A2={fr:"ACTE II · Le Temple",en:"ACT II · The Temple"};
 const A3={fr:"ACTE III · La Tour",en:"ACT III · The Tower"};
 
 const scenes = {
-/* ===================== ACTE I ===================== */
-  intro:{ act:A1,
-    lieu:{fr:"Lisière de la forêt", en:"Edge of the forest"},
-    txt:()=>({fr:`<p>La pluie tambourine sur votre capuche. Devant vous s'étend la <span class="ev">forêt des Brumes</span>, où dort, dit-on, l'épée d'Eldoria, seule capable de briser la malédiction qui ronge votre village.</p>
-      <p>Un panneau pourri indique deux chemins : un sentier boueux sous les arbres, et une grotte sombre exhalant une odeur de soufre.</p>`,
-      en:`<p>Rain drums on your hood. Before you spreads the <span class="ev">Forest of Mists</span>, where, they say, sleeps the Sword of Eldoria — the only blade that can break the curse devouring your village.</p>
-      <p>A rotten sign points two ways: a muddy trail under the trees, and a dark cave breathing out a smell of sulfur.</p>`}),
-    choix:[
-      {t:{fr:"Prendre le sentier boueux",en:"Take the muddy trail"}, go:"sentier"},
-      {t:{fr:"Entrer dans la grotte sombre",en:"Enter the dark cave"}, go:"grotte"},
-      {t:{fr:"Fouiller sous le panneau",en:"Search under the sign"}, go:"panneau"},
-    ]},
+  intro:{ act:A1, lieu:{fr:"Lisière de la forêt",en:"Edge of the forest"},
+    txt:()=>({fr:`<p>La pluie tambourine sur ta capuche, ${nm()}. Devant toi s'étend la <span class="ev">forêt des Brumes</span> — et quelque part en son cœur dort l'épée d'Eldoria, seule arme capable de briser la malédiction qui ronge ton village.</p>
+      <p>Un panneau pourri indique deux chemins : un sentier boueux sous les arbres, et une grotte sombre exhalant une odeur de soufre. Ton instinct te dit que les deux mènent au danger.</p>`,
+      en:`<p>Rain drums on your hood, ${nm()}. Before you spreads the <span class="ev">Forest of Mists</span> — and somewhere at its heart sleeps the Sword of Eldoria, the only weapon that can break the curse devouring your village.</p>
+      <p>A rotten sign points two ways: a muddy trail under the trees, and a dark cave breathing out sulfur. Your gut says both lead to danger.</p>`}),
+    choix:[ {t:{fr:"Prendre le sentier boueux",en:"Take the muddy trail"},go:"sentier"},
+            {t:{fr:"Entrer dans la grotte sombre",en:"Enter the dark cave"},go:"grotte"},
+            {t:{fr:"Fouiller sous le panneau",en:"Search under the sign"},go:"panneau"} ]},
   panneau:{ act:A1, lieu:{fr:"Lisière de la forêt",en:"Edge of the forest"},
-    txt:()=>{ if(!has("torche")){ add("torche"); return {fr:`<p>Sous une planche, une <span class="ev">torche</span> sèche et un briquet à silex. Précieux dans l'obscurité.</p>`,
-        en:`<p>Under a plank, a dry <span class="ev">torch</span> and a flint. Precious in the dark.</p>`}; }
-      return {fr:`<p>Il n'y a plus rien d'utile ici.</p>`, en:`<p>Nothing useful remains here.</p>`}; },
+    txt:()=>{ if(!has("torche")){ add("torche"); return {fr:`<p>Tu écartes une planche disjointe. Dessous, une <span class="ev">torche</span> encore sèche et un briquet à silex t'attendent. « Voilà qui éclairera les ténèbres », te dis-tu.</p>`,
+        en:`<p>You pry loose a plank. Beneath it, a still-dry <span class="ev">torch</span> and a flint await. "This will light the dark," you murmur.</p>`}; }
+      return {fr:`<p>Il n'y a plus rien d'utile ici.</p>`,en:`<p>Nothing useful remains here.</p>`}; },
     choix:[ {t:{fr:"Le sentier boueux",en:"The muddy trail"},go:"sentier"},
             {t:{fr:"La grotte sombre",en:"The dark cave"},go:"grotte"} ]},
   sentier:{ act:A1, lieu:{fr:"Cœur de la forêt",en:"Heart of the forest"},
-    txt:()=>({fr:`<p>Les arbres se referment. Un <span class="ev">vieil ermite</span> veille près d'un feu mourant. « Voyageur... la nuit, les loups rôdent. Une lame nue les fait fuir. »</p>`,
-      en:`<p>The trees close in. An <span class="ev">old hermit</span> sits by a dying fire. "Traveler... at night the wolves prowl. A bared blade makes them flee."</p>`}),
-    choix:[ {t:{fr:"Parler à l'ermite",en:"Speak to the hermit"},go:"ermite"},
-            {t:{fr:"Continuer vers la clairière",en:"Press on to the glade"},go:"clairiere"} ]},
+    txt:()=>({fr:`<p>Les arbres se referment au-dessus de toi. Près d'un feu mourant veille un <span class="ev">vieil ermite</span>. Il lève vers toi des yeux gris. <span class="say">« ${nm()}, n'est-ce pas ? La forêt murmure ton nom depuis ce matin. La nuit, les loups rôdent ici — une lame nue les fait fuir. »</span></p>`,
+      en:`<p>The trees close in overhead. By a dying fire sits an <span class="ev">old hermit</span>. He lifts grey eyes to you. <span class="say">"${nm()}, is it? The forest has whispered your name since dawn. At night the wolves prowl — a bared blade makes them flee."</span></p>`}),
+    choix:[ {t:{fr:"Parler à l'ermite",en:"Speak with the hermit"},go:"ermite"},
+            {t:{fr:"Poursuivre vers la clairière",en:"Press on to the glade"},go:"clairiere"} ]},
   ermite:{ act:A1, lieu:{fr:"Le feu de l'ermite",en:"The hermit's fire"},
     txt:()=>{ if(!S.flags.ermite){ S.flags.ermite=true; add("pain");
-      return {fr:`<p>L'ermite vous tend du <span class="ev">pain</span>. « Au cœur de la clairière dort une stèle. L'or la flatte, mais c'est l'amulette des anciens qu'elle réclame. Prends garde aux loups, et plus loin... au gardien. »</p>`,
-        en:`<p>The hermit offers you <span class="ev">bread</span>. "In the glade sleeps a stele. Gold flatters it, but it craves the ancients' amulet. Beware the wolves — and beyond, the guardian."</p>`}; }
-      return {fr:`<p>« Je t'ai tout dit, voyageur. Reviens vivant. »</p>`,en:`<p>"I've told you all, traveler. Come back alive."</p>`}; },
+      return {fr:`<p>L'ermite te tend un quignon de <span class="ev">pain</span>. <span class="say">« Au cœur de la clairière dort une stèle. L'or la flatte, mais c'est l'amulette des anciens qu'elle réclame. Au-delà t'attendent un gardien de pierre... et, tout au sommet de la Tour, celui qui jeta la malédiction. Sois prêt, ${nm()}. »</span></p>`,
+        en:`<p>The hermit offers you a crust of <span class="ev">bread</span>. <span class="say">"In the glade sleeps a stele. Gold flatters it, but it craves the ancients' amulet. Beyond waits a stone guardian... and atop the Tower, the one who cast the curse. Be ready, ${nm()}."</span></p>`}; }
+      return {fr:`<p><span class="say">« Je t'ai tout dit. Reviens vivant, ${nm()}. »</span></p>`,en:`<p><span class="say">"I've told you all. Come back alive, ${nm()}."</span></p>`}; },
     choix:[ {t:{fr:"Vers la clairière",en:"To the glade"},go:"clairiere"},
             {t:{fr:"Revenir à la lisière",en:"Back to the edge"},go:"intro"} ]},
   grotte:{ act:A1, lieu:{fr:"La grotte de soufre",en:"The sulfur cave"},
-    txt:()=>{
-      if(!has("torche")) { sfx.death(); return {fr:`<p class="death">L'obscurité est totale. Le sol se dérobe et vous tombez dans un gouffre sans fond.</p>`,
-        en:`<p class="death">Utter darkness. The floor gives way and you fall into a bottomless pit.</p>`}; }
+    txt:()=>{ if(!has("torche")){ sfx.death(); return {fr:`<p class="death">L'obscurité est totale. Tu avances à tâtons, le souffle court... et le sol se dérobe sous tes pieds. Tu bascules dans un gouffre sans fond. Ainsi s'achève ta quête, ${nm()}.</p>`,
+        en:`<p class="death">Utter darkness. You grope forward, breath short... and the floor gives way. You plunge into a bottomless pit. So ends your quest, ${nm()}.</p>`}; }
       if(!S.flags.grotte){ S.flags.grotte=true; add("cle"); add("bouclier"); S.or+=3;
-        return {fr:`<p>Votre torche révèle des cristaux. Sur un autel : une <span class="ev">clé rouillée</span>, un vieux <span class="ev">bouclier</span> et trois pièces d'or.</p>`,
-          en:`<p>Your torch reveals crystals. On an altar: a <span class="ev">rusty key</span>, an old <span class="ev">shield</span>, and three gold coins.</p>`}; }
-      return {fr:`<p>L'autel est vide. Un tunnel descend vers la clairière.</p>`,en:`<p>The altar is bare. A tunnel descends to the glade.</p>`};
-    },
+        return {fr:`<p>Ta torche révèle des parois de cristal. Sur un autel reposent une <span class="ev">clé rouillée</span>, un vieux <span class="ev">bouclier</span> et trois pièces d'or. Tu rafles le tout.</p>`,
+          en:`<p>Your torch reveals crystal walls. On an altar lie a <span class="ev">rusty key</span>, an old <span class="ev">shield</span>, and three gold coins. You take it all.</p>`}; }
+      return {fr:`<p>L'autel est vide. Un tunnel descend vers la clairière.</p>`,en:`<p>The altar is bare. A tunnel descends to the glade.</p>`}; },
     choix:()=>{ if(!has("torche")) return [{t:UI.restartBtn,restart:true}];
       return [ {t:{fr:"Suivre le tunnel",en:"Follow the tunnel"},go:"clairiere"},
                {t:{fr:"Ressortir",en:"Head back out"},go:"intro"} ]; }},
   clairiere:{ act:A1, lieu:{fr:"Clairière de la stèle",en:"Glade of the stele"},
-    txt:()=>({fr:`<p>Une clairière baignée d'une lumière laiteuse. Au centre, une <span class="ev">stèle</span> runique attend une offrande. Derrière elle, une porte de pierre scelle un temple.</p>
-      ${has("amulette")?`<p>Votre amulette tiède vibre près de la stèle.</p>`:``}`,
-      en:`<p>A glade bathed in milky light. At its center a runic <span class="ev">stele</span> awaits an offering. Behind it, a stone door seals a temple.</p>
-      ${has("amulette")?`<p>Your warm amulet hums near the stele.</p>`:``}`}),
+    txt:()=>({fr:`<p>Une clairière baignée d'une lumière laiteuse. En son centre, une <span class="ev">stèle</span> couverte de runes attend une offrande. Derrière elle, une porte de pierre scelle l'entrée d'un temple.</p>${has("amulette")?`<p>L'amulette, tiède contre ta paume, se met à vibrer.</p>`:``}`,
+      en:`<p>A glade bathed in milky light. At its center, a rune-carved <span class="ev">stele</span> awaits an offering. Behind it, a stone door seals a temple.</p>${has("amulette")?`<p>The amulet, warm against your palm, begins to hum.</p>`:``}`}),
     choix:()=>{ const c=[];
-      if(has("amulette")) c.push({t:{fr:"Offrir l'amulette",en:"Offer the amulet"},go:"temple_ouvert"});
-      if(S.or>0) c.push({t:{fr:"Déposer votre or",en:"Lay down your gold"},go:"piege_or"});
+      if(has("amulette")) c.push({t:{fr:"Offrir l'amulette à la stèle",en:"Offer the amulet"},go:"temple_ouvert"});
+      if(S.or>0) c.push({t:{fr:"Déposer ton or",en:"Lay down your gold"},go:"piege_or"});
       if(has("cle")) c.push({t:{fr:"Essayer la clé sur la porte",en:"Try the key on the door"},go:"porte_cle"});
       c.push({t:{fr:"Fouiller les fourrés",en:"Search the thickets"},go:"fourre"});
       return c; }},
   fourre:{ act:A1, lieu:{fr:"Fourrés",en:"Thickets"},
-    txt:()=>{ if(has("amulette")) return {fr:`<p>Vous avez déjà l'amulette.</p>`,en:`<p>You already hold the amulet.</p>`};
-      if(S.flags.loupDone) return {fr:`<p>Les fourrés sont silencieux.</p>`,en:`<p>The thickets are silent now.</p>`};
-      return {fr:`<p>Un grognement... un <span class="ev">loup</span> énorme bondit hors des fourrés, crocs luisants !</p>`,
-        en:`<p>A growl... a huge <span class="ev">wolf</span> leaps from the thickets, fangs gleaming!</p>`}; },
-    onEnter:()=>{ if(!has("amulette") && !S.flags.loupDone){
-        startCombat({name:{fr:"Loup affamé",en:"Starving wolf"}, hp:8, atk:2, win:"loup_butin", fleeTo:"clairiere"}); } },
+    txt:()=>{ if(has("amulette")) return {fr:`<p>Tu as déjà l'amulette.</p>`,en:`<p>You already hold the amulet.</p>`};
+      if(S.flags.loupDone) return {fr:`<p>Les fourrés sont silencieux désormais.</p>`,en:`<p>The thickets are silent now.</p>`};
+      return {fr:`<p>Un grognement sourd... un <span class="ev">loup</span> énorme jaillit des fourrés, babines retroussées !</p>`,
+        en:`<p>A low growl... a huge <span class="ev">wolf</span> bursts from the thickets, fangs bared!</p>`}; },
+    onEnter:()=>{ if(!has("amulette")&&!S.flags.loupDone) startCombat({name:{fr:"Loup affamé",en:"Starving wolf"},hp:9,atk:2,xp:12,win:"loup_butin",fleeTo:"clairiere"}); },
     choix:()=>{ if(has("amulette")||S.flags.loupDone) return [{t:{fr:"Retour à la stèle",en:"Back to the stele"},go:"clairiere"}]; return []; }},
   loup_butin:{ act:A1, lieu:{fr:"Fourrés",en:"Thickets"},
     onEnter:()=>{ S.flags.loupDone=true; add("amulette"); },
-    txt:()=>({fr:`<p>Le loup s'effondre. À son cou pendait une <span class="ev">amulette</span> ancienne : elle est à vous.</p>`,
-      en:`<p>The wolf falls. An ancient <span class="ev">amulet</span> hung at its neck — now yours.</p>`}),
+    txt:()=>({fr:`<p>Le loup s'effondre dans un dernier râle. À son cou pendait une <span class="ev">amulette</span> ancienne — elle est à toi.</p>`,
+      en:`<p>The wolf collapses with a final whine. An ancient <span class="ev">amulet</span> hung at its neck — now yours.</p>`}),
     choix:[{t:{fr:"Retour à la stèle",en:"Back to the stele"},go:"clairiere"}]},
   piege_or:{ act:A1, lieu:{fr:"La stèle",en:"The stele"},
     onEnter:()=>{ S.or=0; },
-    txt:()=>({fr:`<p>Les runes rougeoient... la stèle <span class="ev">engloutit votre or</span> sans s'ouvrir. Ce n'était pas la bonne offrande.</p>`,
-      en:`<p>The runes glow red... the stele <span class="ev">swallows your gold</span> and stays shut. Wrong offering.</p>`}),
+    txt:()=>({fr:`<p>Tes pièces tintent sur la pierre. Les runes rougeoient... puis la stèle <span class="ev">engloutit ton or</span> sans s'ouvrir. Ce n'était pas la bonne offrande, ${nm()}.</p>`,
+      en:`<p>Your coins ring on the stone. The runes glow red... then the stele <span class="ev">swallows your gold</span> and stays shut. Wrong offering, ${nm()}.</p>`}),
     choix:[{t:{fr:"Réfléchir et revenir",en:"Think and return"},go:"clairiere"}]},
   porte_cle:{ act:A1, lieu:{fr:"Porte du temple",en:"Temple door"},
-    txt:()=>({fr:`<p>La clé refuse de tourner : la porte n'obéit qu'à la magie. Mais une petite <span class="ev">trappe</span> latérale, elle, pourrait céder.</p>`,
-      en:`<p>The key won't turn — the door answers only to magic. Yet a small side <span class="ev">hatch</span> might give.</p>`}),
-    choix:[ {t:{fr:"Ouvrir la trappe",en:"Open the hatch"},go:"reserve"},
+    txt:()=>({fr:`<p>La clé grince mais refuse de tourner : cette porte n'obéit qu'à la magie. Tu remarques pourtant une petite <span class="ev">trappe</span> latérale qui, elle, pourrait céder au métal.</p>`,
+      en:`<p>The key grinds but won't turn — this door answers only to magic. Yet you spot a small side <span class="ev">hatch</span> that might give to steel.</p>`}),
+    choix:[ {t:{fr:"Forcer la trappe",en:"Force the hatch"},go:"reserve"},
             {t:{fr:"Revenir à la stèle",en:"Back to the stele"},go:"clairiere"} ]},
   reserve:{ act:A1, lieu:{fr:"Réserve cachée",en:"Hidden store"},
-    txt:()=>{ if(!S.flags.reserve){ S.flags.reserve=true; add("potion"); add("potion");
-      return {fr:`<p>Une réserve poussiéreuse : deux <span class="ev">potions de soin</span> et une vieille <span class="ev">carte</span>.</p>`,
-        en:`<p>A dusty store: two <span class="ev">healing potions</span> and an old <span class="ev">map</span>.</p>`}; }
+    txt:()=>{ if(!S.flags.reserve){ S.flags.reserve=true; add("potion"); add("potion"); add("carte");
+      return {fr:`<p>Une réserve poussiéreuse. Sur une étagère : deux <span class="ev">potions de soin</span> et une vieille <span class="ev">carte</span> du temple. Bien joué, ${nm()}.</p>`,
+        en:`<p>A dusty store. On a shelf: two <span class="ev">healing potions</span> and an old <span class="ev">map</span> of the temple. Well done, ${nm()}.</p>`}; }
       return {fr:`<p>La réserve est vide.</p>`,en:`<p>The store is empty.</p>`}; },
-    onEnter:()=>{ if(!has("carte")) add("carte"); },
     choix:[{t:{fr:"Revenir à la stèle",en:"Back to the stele"},go:"clairiere"}]},
 
-/* ===================== ACTE II ===================== */
   temple_ouvert:{ act:A2, lieu:{fr:"Seuil du temple",en:"Temple threshold"},
     onEnter:()=>{ drop("amulette"); },
-    txt:()=>({fr:`<p>L'amulette se dissout en lumière. La <span class="ev">porte de pierre s'ouvre</span> dans un grondement. Un souffle glacé monte des profondeurs.</p>`,
-      en:`<p>The amulet melts into light. The <span class="ev">stone door grinds open</span>. An icy breath rises from below.</p>`}),
+    txt:()=>({fr:`<p>L'amulette se dissout en une lumière éclatante. Dans un grondement de pierre, la <span class="ev">porte s'ouvre</span>. Un souffle glacé monte des profondeurs et caresse ton visage.</p>`,
+      en:`<p>The amulet melts into blazing light. With a grind of stone, the <span class="ev">door opens</span>. An icy breath rises from below and brushes your face.</p>`}),
     choix:[{t:{fr:"Descendre dans le temple",en:"Descend into the temple"},go:"hall"}]},
   hall:{ act:A2, lieu:{fr:"Hall du temple",en:"Temple hall"},
-    txt:()=>({fr:`<p>Un grand hall aux colonnes brisées. Deux passages : à gauche, une salle d'armes ; à droite, un sanctuaire d'où émane une présence. Au centre, un coffre.</p>`,
-      en:`<p>A great hall of broken columns. Two ways: left, an armory; right, a sanctuary humming with presence. A chest sits at the center.</p>`}),
-    choix:()=>{ const c=[
-      {t:{fr:"Salle d'armes (gauche)",en:"Armory (left)"},go:"armes"},
+    txt:()=>({fr:`<p>Un vaste hall aux colonnes brisées s'ouvre devant toi. Deux passages : à gauche, une salle d'armes ; à droite, un sanctuaire d'où émane une présence pesante. Au centre, un coffre oublié.</p>`,
+      en:`<p>A vast hall of broken columns opens before you. Two ways: left, an armory; right, a sanctuary heavy with presence. At the center, a forgotten chest.</p>`}),
+    choix:()=>{ const c=[ {t:{fr:"Salle d'armes (gauche)",en:"Armory (left)"},go:"armes"},
       {t:{fr:"Sanctuaire (droite)",en:"Sanctuary (right)"},go:"gardien"} ];
       if(!S.flags.coffre) c.splice(1,0,{t:{fr:"Ouvrir le coffre",en:"Open the chest"},go:"coffre"});
       return c; }},
   coffre:{ act:A2, lieu:{fr:"Coffre du hall",en:"Hall chest"},
     onEnter:()=>{ S.flags.coffre=true; S.or+=10; add("gemme"); S.pvmax+=2; S.pv+=2; },
-    txt:()=>({fr:`<p>Le coffre cède : <span class="ev">10 pièces d'or</span>, une <span class="ev">gemme bleue</span> et une fiole qui renforce votre vitalité (<b>PV max +2</b>) !</p>`,
-      en:`<p>The chest yields <span class="ev">10 gold</span>, a <span class="ev">blue gem</span>, and a vial boosting your vitality (<b>Max HP +2</b>)!</p>`}),
+    txt:()=>({fr:`<p>Le couvercle cède : <span class="ev">10 pièces d'or</span>, une <span class="ev">gemme bleue</span> qui pulse doucement, et une fiole de vitalité que tu bois aussitôt (<b>PV max +2</b>) !</p>`,
+      en:`<p>The lid gives way: <span class="ev">10 gold</span>, a softly pulsing <span class="ev">blue gem</span>, and a vial of vitality you drink at once (<b>Max HP +2</b>)!</p>`}),
     choix:[{t:{fr:"Revenir au hall",en:"Back to the hall"},go:"hall"}]},
   armes:{ act:A2, lieu:{fr:"Salle d'armes",en:"Armory"},
     txt:()=>{ if(!S.flags.armes){ S.flags.armes=true; if(!has("epee")) add("epee");
-      return {fr:`<p>Râteliers rouillés. Une <span class="ev">épée runique</span> luit encore, parfaitement équilibrée. Vous vous en emparez.</p>`,
-        en:`<p>Rusted racks. A <span class="ev">runic sword</span> still glows, perfectly balanced. You take it.</p>`}; }
+      return {fr:`<p>Des râteliers rouillés. Une <span class="ev">épée runique</span> luit encore, parfaitement équilibrée. Tu la saisis — elle te rend plus dangereux au combat.</p>`,
+        en:`<p>Rusted racks. A <span class="ev">runic sword</span> still glows, perfectly balanced. You take it — it makes you deadlier in battle.</p>`}; }
       return {fr:`<p>Plus rien à prendre ici.</p>`,en:`<p>Nothing left to take here.</p>`}; },
     choix:[{t:{fr:"Revenir au hall",en:"Back to the hall"},go:"hall"}]},
   gardien:{ act:A2, lieu:{fr:"Sanctuaire d'Eldoria",en:"Sanctuary of Eldoria"},
-    txt:()=>({fr:`<p>Un <span class="ev">gardien de pierre</span> aux yeux de braise barre la route. « Réponds, mortel : que vainc l'obscurité sans jamais brûler ? »</p>`,
-      en:`<p>A <span class="ev">stone guardian</span> with ember eyes blocks the way. "Answer, mortal: what conquers darkness yet never burns?"</p>`}),
-    choix:[
-      {t:{fr:"« La lumière. »",en:"\"Light.\""}, go:"gardien_sage"},
-      {t:{fr:"« Le feu. »",en:"\"Fire.\""}, go:"gardien_combat"},
-      {t:{fr:"« Le courage. »",en:"\"Courage.\""}, go:"gardien_combat"},
-    ]},
+    txt:()=>({fr:`<p>Un <span class="ev">gardien de pierre</span> aux yeux de braise se dresse devant l'escalier. Sa voix gronde comme un éboulement : <span class="say">« Réponds, mortel : que vainc l'obscurité sans jamais brûler ? »</span></p>`,
+      en:`<p>A <span class="ev">stone guardian</span> with ember eyes stands before the stair. Its voice rumbles like a rockslide: <span class="say">"Answer, mortal: what conquers darkness yet never burns?"</span></p>`}),
+    choix:[ {t:{fr:"« La lumière. »",en:"\"Light.\""},go:"gardien_sage"},
+            {t:{fr:"« Le feu. »",en:"\"Fire.\""},go:"gardien_combat"},
+            {t:{fr:"« Le courage. »",en:"\"Courage.\""},go:"gardien_combat"} ]},
   gardien_sage:{ act:A2, lieu:{fr:"Sanctuaire d'Eldoria",en:"Sanctuary of Eldoria"},
-    txt:()=>({fr:`<p>« La lumière. » Les yeux du gardien s'éteignent. « Sage. » Il s'incline et se fige, libérant l'escalier vers la Tour.</p>`,
-      en:`<p>"Light." The guardian's eyes dim. "Wise." It bows and stills, freeing the stair to the Tower.</p>`}),
+    txt:()=>({fr:`<p>« La lumière. » Les yeux de braise du gardien s'éteignent lentement. <span class="say">« Sage, ${nm()}. »</span> Il s'incline et se fige, libérant l'escalier vers la Tour.</p>`,
+      en:`<p>"Light." The guardian's ember eyes slowly dim. <span class="say">"Wise, ${nm()}."</span> It bows and stills, freeing the stair to the Tower.</p>`}),
     choix:[{t:{fr:"Monter vers la Tour",en:"Climb to the Tower"},go:"tour_pied"}]},
   gardien_combat:{ act:A2, lieu:{fr:"Sanctuaire d'Eldoria",en:"Sanctuary of Eldoria"},
-    txt:()=>({fr:`<p>Mauvaise réponse ! Le gardien s'anime dans un fracas de pierre et lève son poing.</p>`,
-      en:`<p>Wrong! The guardian wakes with a crash of stone and raises its fist.</p>`}),
-    onEnter:()=>{ startCombat({name:{fr:"Gardien de pierre",en:"Stone guardian"}, hp:14, atk:3, win:"tour_pied", noFlee:true}); },
+    txt:()=>({fr:`<p>Mauvaise réponse ! Le gardien s'anime dans un fracas de pierre et lève un poing gros comme un rocher.</p>`,
+      en:`<p>Wrong! The guardian wakes with a crash of stone and raises a fist the size of a boulder.</p>`}),
+    onEnter:()=>{ startCombat({name:{fr:"Gardien de pierre",en:"Stone guardian"},hp:16,atk:3,xp:25,win:"tour_pied",noFlee:true}); },
     choix:[]},
 
-/* ===================== ACTE III ===================== */
   tour_pied:{ act:A3, lieu:{fr:"Pied de la Tour",en:"Foot of the Tower"},
-    txt:()=>({fr:`<p>Au-delà du sanctuaire s'élève la <span class="ev">Tour d'Eldoria</span>, brisant les nuages. Tout en haut repose l'épée légendaire — gardée par celui qui jeta la malédiction : le <span class="ev">Sorcier des Brumes</span>.</p>
-      <p>Un escalier en spirale s'enfonce dans la pénombre.</p>`,
-      en:`<p>Past the sanctuary rises the <span class="ev">Tower of Eldoria</span>, splitting the clouds. At its peak rests the legendary sword — kept by the one who cast the curse: the <span class="ev">Mist Sorcerer</span>.</p>
-      <p>A spiral stair winds up into gloom.</p>`}),
-    choix:[ {t:{fr:"Gravir l'escalier",en:"Climb the stair"},go:"palier"},
-            ...(S.flags.armes?[]:[{t:{fr:"D'abord retourner à la salle d'armes",en:"First return to the armory"},go:"armes"}]) ]},
+    txt:()=>({fr:`<p>Au-delà du sanctuaire se dresse la <span class="ev">Tour d'Eldoria</span>, qui transperce les nuages. Tout en haut repose l'épée légendaire — gardée par celui qui jeta la malédiction : le <span class="ev">Sorcier des Brumes</span>. Un escalier en spirale s'enfonce dans la pénombre.</p>`,
+      en:`<p>Past the sanctuary rises the <span class="ev">Tower of Eldoria</span>, piercing the clouds. At its peak rests the legendary sword — kept by the one who cast the curse: the <span class="ev">Mist Sorcerer</span>. A spiral stair winds up into gloom.</p>`}),
+    choix:()=>{ const c=[{t:{fr:"Gravir l'escalier",en:"Climb the stair"},go:"palier"}];
+      if(!S.flags.armes) c.push({t:{fr:"D'abord récupérer l'épée runique",en:"First grab the runic sword"},go:"armes"});
+      return c; }},
   palier:{ act:A3, lieu:{fr:"Palier de la Tour",en:"Tower landing"},
-    txt:()=>{ if(!S.flags.spectre) return {fr:`<p>À mi-hauteur, un <span class="ev">spectre</span> glacé surgit du mur, hurlant pour défendre son maître !</p>`,
-        en:`<p>Halfway up, an icy <span class="ev">wraith</span> bursts from the wall, shrieking to defend its master!</p>`};
-      return {fr:`<p>Le palier est calme. L'escalier continue vers le sommet.</p>`,en:`<p>The landing is calm. The stair continues to the summit.</p>`}; },
-    onEnter:()=>{ if(!S.flags.spectre){ startCombat({name:{fr:"Spectre glacé",en:"Frost wraith"}, hp:12, atk:3, win:"palier", fleeTo:"tour_pied"}); } },
-    choix:()=>{ if(!S.flags.spectre){ S.flags.spectre=true; }
-      return [{t:{fr:"Atteindre le sommet",en:"Reach the summit"},go:"sommet"}]; }},
+    txt:()=>{ if(!S.flags.spectre) return {fr:`<p>À mi-hauteur, un <span class="ev">spectre glacé</span> s'arrache du mur en hurlant pour défendre son maître !</p>`,
+        en:`<p>Halfway up, a <span class="ev">frost wraith</span> tears from the wall, shrieking to defend its master!</p>`};
+      return {fr:`<p>Le palier est calme. L'escalier continue vers le sommet.</p>`,en:`<p>The landing is calm. The stair climbs on to the summit.</p>`}; },
+    onEnter:()=>{ if(!S.flags.spectre) startCombat({name:{fr:"Spectre glacé",en:"Frost wraith"},hp:14,atk:3,xp:22,win:"palier_ok",fleeTo:"tour_pied"}); },
+    choix:()=>{ if(!S.flags.spectre) return []; return [{t:{fr:"Atteindre le sommet",en:"Reach the summit"},go:"sommet"}]; }},
+  palier_ok:{ act:A3, lieu:{fr:"Palier de la Tour",en:"Tower landing"},
+    onEnter:()=>{ S.flags.spectre=true; },
+    txt:()=>({fr:`<p>Le spectre se dissipe en un souffle de givre. Le passage est libre.</p>`,en:`<p>The wraith scatters in a gust of frost. The way is clear.</p>`}),
+    choix:[{t:{fr:"Atteindre le sommet",en:"Reach the summit"},go:"sommet"}]},
   sommet:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    txt:()=>({fr:`<p>Au sommet, le <span class="ev">Sorcier des Brumes</span> flotte devant l'épée d'Eldoria, brillante de runes. « Tu as bien combattu... mais la malédiction est ma puissance. Tu ne prendras pas la lame. »</p>`,
-      en:`<p>At the top the <span class="ev">Mist Sorcerer</span> hovers before the sword of Eldoria, ablaze with runes. "You fought well... but the curse is my power. You shall not take the blade."</p>`}),
+    txt:()=>({fr:`<p>Au sommet, le <span class="ev">Sorcier des Brumes</span> flotte devant l'épée d'Eldoria, ardente de runes. <span class="say">« Tu as bien combattu, ${nm()}... mais la malédiction est ma puissance même. Tu ne prendras pas la lame. »</span></p>`,
+      en:`<p>At the top, the <span class="ev">Mist Sorcerer</span> hovers before the sword of Eldoria, ablaze with runes. <span class="say">"You fought well, ${nm()}... but the curse is my very power. You shall not take the blade."</span></p>`}),
     choix:()=>{ const c=[{t:{fr:"L'affronter",en:"Face him in battle"},go:"boss"}];
       if(has("gemme")) c.push({t:{fr:"Brandir la gemme bleue",en:"Raise the blue gem"},go:"gemme_fin"});
       return c; }},
   gemme_fin:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
     onEnter:()=>{ drop("gemme"); },
-    txt:()=>({fr:`<p>La <span class="ev">gemme bleue</span> jaillit d'une lumière pure. Le sorcier hurle : « La Larme d'Eldoria ! Où l'as-tu... » — la brume qui le compose se déchire. Affaibli, il n'est plus qu'un homme.</p>`,
-      en:`<p>The <span class="ev">blue gem</span> erupts with pure light. The sorcerer screams: "The Tear of Eldoria! Where did you—" — the mist composing him tears apart. Weakened, he is but a man.</p>`}),
+    txt:()=>({fr:`<p>Tu brandis la <span class="ev">gemme bleue</span> : elle explose d'une lumière pure. Le sorcier hurle — <span class="say">« La Larme d'Eldoria ! Où l'as-tu... »</span> — la brume qui le compose se déchire. Affaibli, il n'est plus qu'un homme.</p>`,
+      en:`<p>You raise the <span class="ev">blue gem</span>: it bursts with pure light. The sorcerer screams — <span class="say">"The Tear of Eldoria! Where did you—"</span> — the mist that forms him tears apart. Weakened, he is but a man.</p>`}),
     choix:[{t:{fr:"Achever le combat",en:"Finish the fight"},go:"boss_faible"}]},
   boss:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    onEnter:()=>{ startCombat({name:{fr:"Sorcier des Brumes",en:"Mist Sorcerer"}, hp:22, atk:4, win:"victoire", noFlee:true}); },
-    txt:()=>({fr:`<p>La brume tournoie. Le combat final commence !</p>`,en:`<p>The mist whirls. The final battle begins!</p>`}),
+    onEnter:()=>{ startCombat({name:{fr:"Sorcier des Brumes",en:"Mist Sorcerer"},hp:26,atk:4,xp:50,win:"victoire",noFlee:true}); },
+    txt:()=>({fr:`<p>La brume tournoie autour de toi. Le combat final commence !</p>`,en:`<p>The mist whirls around you. The final battle begins!</p>`}),
     choix:[]},
   boss_faible:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    onEnter:()=>{ startCombat({name:{fr:"Sorcier affaibli",en:"Weakened Sorcerer"}, hp:10, atk:2, win:"victoire", noFlee:true}); },
-    txt:()=>({fr:`<p>Le sorcier dépouillé de sa brume chancelle. Frappez !</p>`,en:`<p>Stripped of his mist, the sorcerer staggers. Strike!</p>`}),
+    onEnter:()=>{ startCombat({name:{fr:"Sorcier affaibli",en:"Weakened Sorcerer"},hp:12,atk:2,xp:50,win:"victoire",noFlee:true}); },
+    txt:()=>({fr:`<p>Dépouillé de sa brume, le sorcier chancelle. Frappe, ${nm()} !</p>`,en:`<p>Stripped of his mist, the sorcerer staggers. Strike, ${nm()}!</p>`}),
     choix:[]},
   victoire:{ act:A3, lieu:{fr:"★ Fin",en:"★ Ending"},
     onEnter:()=>{ S.flags.win=true; add("excalibur"); drop("epee"); sfx.win(); save(); },
-    txt:()=>({fr:`<p class="win">Le sorcier se dissipe dans un dernier cri. Vos doigts se referment sur l'<span class="ev">épée d'Eldoria</span> : une chaleur ancienne remonte dans votre bras.</p>
-      <p class="end">La malédiction se brise. Vous redescendez vers la lumière du jour, héros d'Eldoria${S.or>0?`, ${S.or} pièces d'or au côté`:``}. <b>VICTOIRE.</b></p>`,
+    txt:()=>({fr:`<p class="win">Le sorcier se dissipe dans un dernier cri. Tes doigts se referment sur l'<span class="ev">épée d'Eldoria</span> : une chaleur ancienne remonte le long de ton bras.</p>
+      <p class="end">La malédiction se brise. Tu redescends vers la lumière du jour, ${nm()}, héros d'Eldoria de niveau ${S.lvl}${S.or>0?`, ${S.or} pièces d'or au côté`:``}. <b>VICTOIRE.</b></p>`,
       en:`<p class="win">The sorcerer dissolves with a final cry. Your fingers close on the <span class="ev">sword of Eldoria</span>: an ancient warmth flows up your arm.</p>
-      <p class="end">The curse shatters. You descend into daylight, hero of Eldoria${S.or>0?`, ${S.or} gold at your side`:``}. <b>VICTORY.</b></p>`}),
+      <p class="end">The curse shatters. You descend into daylight, ${nm()}, hero of Eldoria at level ${S.lvl}${S.or>0?`, ${S.or} gold at your side`:``}. <b>VICTORY.</b></p>`}),
     choix:[{t:{fr:"⟳ Rejouer",en:"⟳ Play again"},restart:true}]},
 };
 
 /* ---------- mort ---------- */
-function death(){
-  sfx.death();
-  S.scene="_dead"; COMBAT=null;
-  $("enemyBox").innerHTML="";
+function death(){ sfx.death(); S.scene="_dead"; COMBAT=null; $("enemyBox").innerHTML="";
   $("act").textContent=""; $("where").textContent=t({fr:"Mort",en:"Death"});
-  $("text").innerHTML = t({fr:`<p class="death">Vos forces vous abandonnent. L'obscurité vous engloutit, et la malédiction d'Eldoria demeure...</p>`,
-    en:`<p class="death">Your strength fails. Darkness swallows you, and Eldoria's curse endures...</p>`});
-  $("log").innerHTML="";
-  renderStats();
+  $("text").innerHTML=t({fr:`<p class="death">Tes forces t'abandonnent, ${nm()}. L'obscurité t'engloutit, et la malédiction d'Eldoria demeure... mais une autre tentative t'attend.</p>`,
+    en:`<p class="death">Your strength fails, ${nm()}. Darkness swallows you, and Eldoria's curse endures... yet another attempt awaits.</p>`});
+  $("log").innerHTML=""; renderStats();
   const c=$("choices"); c.innerHTML="";
   const b=document.createElement("button"); b.className="choice";
   b.innerHTML=`<span class="arrow">▸</span> ${t(UI.restartBtn)}`;
-  b.onclick=()=>{ S=start(); save(); goto("intro"); };
-  c.appendChild(b);
-  save();
+  b.onclick=()=>{ newGame(); }; c.appendChild(b); save();
 }
 
 /* ---------- rendu ---------- */
 const $ = id => document.getElementById(id);
 function renderStats(){
+  if(!S.started){ $("stats").innerHTML=""; return; }
   const full=Math.max(0,S.pv), empty=Math.max(0,S.pvmax-S.pv);
-  let html=`<span class="chip"><b class="hp">${"♥".repeat(full)}${"♡".repeat(empty)}</b></span>`;
-  html+=`<span class="chip">${t(UI.gold)} : <b>${S.or}</b></span>`;
+  let html=`<span class="chip">${CLASSES[S.cls]?CLASSES[S.cls].ic:""} <b>${S.name}</b></span>`;
+  html+=`<span class="chip">${t(UI.lvl)} <b>${S.lvl}</b></span>`;
+  html+=`<span class="chip"><b class="hp">${"♥".repeat(full)}${"♡".repeat(empty)}</b></span>`;
+  html+=`<span class="chip"><b class="en">${"◆".repeat(Math.max(0,S.energy))}${"◇".repeat(Math.max(0,S.energymax-S.energy))}</b></span>`;
+  html+=`<span class="chip">${t(UI.gold)} <b>${S.or}</b></span>`;
+  const need=XP_TABLE[S.lvl]??null, prev=XP_TABLE[S.lvl-1]??0;
+  const pct=need?Math.min(100,(S.xp-prev)/(need-prev)*100):100;
+  html+=`<span class="xpwrap"><small>XP</small><span class="xpbar"><i style="width:${pct}%"></i></span><small>${need?S.xp+"/"+need:"max"}</small></span>`;
   if(S.inv.length) html+=S.inv.map(i=>`<span class="chip">${t(items[i]||{fr:i,en:i})}</span>`).join("");
-  else html+=`<span class="chip">${t(UI.bagEmpty)}</span>`;
   $("stats").innerHTML=html;
 }
+
+/* ---------- création de personnage ---------- */
+let pickCls="guerrier";
+function showCreate(){
+  S.started=false; COMBAT=null; $("enemyBox").innerHTML=""; $("log").innerHTML=""; renderStats();
+  $("act").textContent=""; $("where").textContent=t(UI.createTitle);
+  $("text").innerHTML=t(UI.whoText);
+  const c=$("choices"); c.innerHTML="";
+  const wrap=document.createElement("div"); wrap.className="create";
+  wrap.innerHTML=`<label>${t(UI.nameLabel)}</label>
+    <input id="nameInput" maxlength="16" placeholder="${t(UI.namePlaceholder)}" value="${S.name||""}">
+    <label>${t(UI.classLabel)}</label>
+    <div class="classes" id="clsGrid"></div>`;
+  $("choices").appendChild(wrap);
+  const grid=wrap.querySelector("#clsGrid");
+  Object.entries(CLASSES).forEach(([key,cl])=>{
+    const d=document.createElement("div"); d.className="cls"+(key===pickCls?" sel":""); d.dataset.k=key;
+    d.innerHTML=`<div class="ic">${cl.ic}</div><div class="nm">${t(cl.name)}</div>
+      <div class="ds">${t(cl.desc)}</div>
+      <div class="ds" style="margin-top:6px;color:var(--accent)">♥ ${cl.pvmax} · ⚔ ${cl.atk} · ◆ ${cl.energymax}</div>`;
+    d.onclick=()=>{ pickCls=key; sfx.click(); grid.querySelectorAll(".cls").forEach(x=>x.classList.remove("sel")); d.classList.add("sel"); };
+    grid.appendChild(d);
+  });
+  const begin=document.createElement("button"); begin.className="choice"; begin.style.marginTop="8px";
+  begin.innerHTML=`<span class="arrow">▸</span> ${t(UI.begin)}`;
+  begin.onclick=()=>{ const nv=($("nameInput").value||"").trim();
+    const cl=CLASSES[pickCls];
+    S.name = nv || (LANG==="fr"?"Voyageur":"Traveler");
+    S.cls=pickCls; S.pvmax=cl.pvmax; S.pv=cl.pvmax; S.atk=cl.atk;
+    S.energymax=cl.energymax; S.energy=cl.energymax; S.regen=cl.regen;
+    S.lvl=1; S.xp=0; S.or=0; S.inv=[]; S.flags={}; S.started=true; sfx.pickup(); goto("intro"); };
+  $("choices").appendChild(begin);
+}
+
+function newGame(){ S=blank(); S.scene="_create"; pickCls="guerrier"; save(); applyStaticLabels(); showCreate(); }
+
+/* ---------- navigation ---------- */
 function goto(id){
+  if(id==="_create"){ showCreate(); save(); return; }
   S.scene=id; COMBAT=null; $("enemyBox").innerHTML=""; $("log").innerHTML="";
-  const sc=scenes[id];
+  const sc=scenes[id]; if(!sc){ showCreate(); return; }
   if(sc.onEnter) sc.onEnter();
-  if(COMBAT){ // onEnter a déclenché un combat
-    $("act").innerHTML=`<span>${t(sc.act||"")}</span>`; $("act").className="act";
-    $("where").textContent=t(sc.lieu);
-    $("text").innerHTML=t(sc.txt());
-    renderCombat(); save(); return;
-  }
-  $("act").textContent=t(sc.act||"");
-  $("where").textContent=t(sc.lieu);
-  $("text").innerHTML=t(sc.txt());
-  renderStats();
+  if(COMBAT){ $("act").textContent=t(sc.act||""); $("where").textContent=t(sc.lieu);
+    $("text").innerHTML=t(sc.txt()); renderCombat(); save(); return; }
+  $("act").textContent=t(sc.act||""); $("where").textContent=t(sc.lieu);
+  $("text").innerHTML=t(sc.txt()); renderStats();
   const choix=(typeof sc.choix==="function")?sc.choix():sc.choix;
   const c=$("choices"); c.innerHTML="";
-  choix.forEach(ch=>{
-    const b=document.createElement("button"); b.className="choice";
+  choix.forEach(ch=>{ const b=document.createElement("button"); b.className="choice";
     b.innerHTML=`<span class="arrow">▸</span> ${t(ch.t)}`;
-    b.onclick=()=>{ sfx.click(); if(ch.restart){ S=start(); save(); goto("intro"); } else goto(ch.go); };
-    c.appendChild(b);
-  });
+    b.onclick=()=>{ sfx.click(); if(ch.restart){ newGame(); } else goto(ch.go); }; c.appendChild(b); });
   save();
 }
 
@@ -512,25 +568,27 @@ function goto(id){
 function applyStaticLabels(){
   document.documentElement.lang=LANG;
   $("tagline").textContent=t(UI.tagline);
-  $("btnSave").textContent=t(UI.save);
-  $("btnReset").textContent=t(UI.reset);
+  $("btnSave").textContent=t(UI.save); $("btnReset").textContent=t(UI.reset);
   $("btnLang").textContent = LANG==="fr"?"EN":"FR";
-  $("btnSound").textContent = SOUND?"🔊":"🔇";
-  $("btnSound").className = "tool"+(SOUND?" on":"");
-  $("footer").textContent=t(UI.footer);
+  $("btnSound").textContent = SOUND?"🔊":"🔇"; $("btnSound").className="tool"+(SOUND?" on":"");
+  $("footer").textContent = S.started
+    ? t({fr:`Héros : ${S.name} · explore, gagne des niveaux, choisis tes combats. Partie sauvegardée automatiquement.`,
+         en:`Hero: ${S.name} · explore, level up, pick your fights. Game saved automatically.`})
+    : t({fr:"Crée ton héros pour commencer. Ta progression est sauvegardée automatiquement.",
+         en:"Create your hero to begin. Your progress saves automatically."});
 }
-$("btnLang").onclick=()=>{ LANG=LANG==="fr"?"en":"fr"; sfx.click(); applyStaticLabels();
-  if(COMBAT) renderCombat(); else goto(S.scene==="_dead"?"_dead":S.scene);
-  if(S.scene==="_dead") death(); save(); };
+function rerender(){ applyStaticLabels(); if(COMBAT) renderCombat();
+  else if(S.scene==="_dead") death(); else if(!S.started) showCreate(); else goto(S.scene); }
+$("btnLang").onclick=()=>{ LANG=LANG==="fr"?"en":"fr"; sfx.click(); rerender(); save(); };
 $("btnSound").onclick=()=>{ SOUND=!SOUND; if(SOUND) sfx.pickup(); applyStaticLabels(); save(); };
 $("btnSave").onclick=()=>{ save(); const b=$("btnSave"); b.textContent=t(UI.saved); b.classList.add("saved");
   setTimeout(()=>{ b.textContent=t(UI.save); b.classList.remove("saved"); },1200); };
-$("btnReset").onclick=()=>{ S=start(); COMBAT=null; save(); applyStaticLabels(); goto("intro"); };
+$("btnReset").onclick=()=>{ newGame(); };
 
 /* ---------- démarrage ---------- */
-load();
-applyStaticLabels();
-if(S.scene==="_dead") death();
+load(); applyStaticLabels();
+if(!S.started){ showCreate(); }
+else if(S.scene==="_dead") death();
 else goto(S.scene||"intro");
 </script>
 </body>
