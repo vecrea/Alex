@@ -70,12 +70,26 @@
       <kbd>Z/W</kbd><kbd>Q/A</kbd><kbd>S</kbd><kbd>D</kbd> se déplacer ·
       <kbd>Espace</kbd> sauter · <kbd>Souris</kbd> regarder<br>
       <kbd>Clic G</kbd> casser · <kbd>Clic D</kbd> poser · <kbd>Molette</kbd> / <kbd>1-7</kbd> choisir le bloc ·
-      <kbd>Échap</kbd> libérer la souris
+      <kbd>Échap</kbd> pause<br>
+      <span style="opacity:.7">Si la souris ne se verrouille pas : <b>glisse</b> pour regarder, <b>clique</b> pour agir.</span>
     </p>
     <button id="play">▶ JOUER</button>
   </div>
 </div>
 
+<script>
+// Affiche toute erreur de chargement (CDN bloqué, module non chargé…) au lieu d'échouer en silence
+window.addEventListener('error', e=>{
+  const o=document.getElementById('overlay'); if(!o) return;
+  o.classList.remove('hidden');
+  o.querySelector('.card').innerHTML =
+    '<h1 style="font-size:30px">Oups…</h1>'+
+    '<p>Le moteur 3D n\'a pas pu se charger.<br>'+
+    'C\'est souvent dû au CDN bloqué (réseau, iframe, hors-ligne).</p>'+
+    '<p style="font-size:12px;opacity:.8">Détail : '+ (e.message||e.type) +'</p>'+
+    '<p style="font-size:13px">👉 Ouvre <b>index.html</b> en local, ou utilise la version GitHub&nbsp;Pages.</p>';
+}, true);
+</script>
 <script type="importmap">
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
 </script>
@@ -401,36 +415,77 @@ hl.visible=false; scene.add(hl);
 // ---------------------------------------------------------------------------
 const cv=renderer.domElement;
 const overlay=document.getElementById('overlay');
-document.getElementById('play').onclick=()=>cv.requestPointerLock();
+
+// "playing" = la partie est active. On NE dépend PAS du pointer lock :
+// s'il est dispo (page servie normalement) tant mieux, sinon on bascule
+// en mode "glisser pour regarder" qui marche partout (iframe, htmlpreview…).
+let playing=false, dragging=false, dragMoved=false;
+const SENS=0.0024;
+function locked(){ return document.pointerLockElement===cv; }
+
+function startPlay(){
+  playing=true;
+  overlay.classList.add('hidden');
+  // tentative de pointer lock (best effort, ignore l'échec)
+  try{ const p=cv.requestPointerLock&&cv.requestPointerLock(); if(p&&p.catch) p.catch(()=>{}); }catch(_){}
+}
+function pause(){
+  playing=false;
+  overlay.classList.remove('hidden');
+  if(locked()) document.exitPointerLock();
+}
+document.getElementById('play').onclick=startPlay;
+
 addEventListener('pointerlockchange',()=>{
-  if(document.pointerLockElement===cv) overlay.classList.add('hidden');
-  else overlay.classList.remove('hidden');
+  // si l'utilisateur quitte le pointer lock alors qu'on a une vraie souris
+  // verrouillée disponible, on met en pause. Sinon (jamais verrouillé) on ignore.
+  if(!locked() && playing && hadLock) pause();
+  if(locked()) hadLock=true;
 });
-addEventListener('mousemove',e=>{
-  if(document.pointerLockElement!==cv) return;
-  player.yaw   -= e.movementX*0.0024;
-  player.pitch -= e.movementY*0.0024;
+let hadLock=false;
+
+function look(dx,dy){
+  player.yaw   -= dx*SENS;
+  player.pitch -= dy*SENS;
   const lim=Math.PI/2-0.01;
   player.pitch=Math.max(-lim,Math.min(lim,player.pitch));
+}
+
+addEventListener('mousemove',e=>{
+  if(!playing) return;
+  if(locked()){ look(e.movementX,e.movementY); }
+  else if(dragging){ look(e.movementX,e.movementY); dragMoved=true; }
 });
-addEventListener('mousedown',e=>{
-  if(document.pointerLockElement!==cv) return;
+
+function doAction(button){
   const r=raycast(); if(!r) return;
-  if(e.button===0){                       // casser
+  if(button===0){                          // casser
     setBlock(r.hit[0],r.hit[1],r.hit[2],B.AIR);
-  } else if(e.button===2){                 // poser
+  } else if(button===2){                   // poser
     const [px,py,pz]=r.place;
-    // ne pas poser dans le joueur
     const w=player.w/2;
     const inside = px>=Math.floor(player.pos.x-w) && px<=Math.floor(player.pos.x+w)
                 && pz>=Math.floor(player.pos.z-w) && pz<=Math.floor(player.pos.z+w)
                 && py>=Math.floor(player.pos.y) && py<=Math.floor(player.pos.y+player.h);
     if(!inside) setBlock(px,py,pz,HOTBAR[sel]);
   }
+}
+
+cv.addEventListener('mousedown',e=>{
+  if(!playing){ startPlay(); return; }
+  if(locked()){ doAction(e.button); }         // souris verrouillée : action immédiate
+  else { dragging=true; dragMoved=false; }    // mode glisser : on attend le relâchement
+});
+addEventListener('mouseup',e=>{
+  if(!playing || locked()) return;
+  // un vrai clic (sans glisser) = action ; un glissé = on a juste regardé
+  if(dragging && !dragMoved) doAction(e.button);
+  dragging=false;
 });
 addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('keydown',e=>{ if(e.code==='Escape') pause(); });
 addEventListener('wheel',e=>{
-  if(document.pointerLockElement!==cv) return;
+  if(!playing) return;
   sel=(sel+(e.deltaY>0?1:-1)+HOTBAR.length)%HOTBAR.length; drawHotbar();
 });
 
@@ -446,7 +501,7 @@ function drawHotbar(){
     d.innerHTML=`<span class="num">${i+1}</span>
       <span class="sw" style="background:${BLOCKS[t].top}"></span>
       <span>${BLOCKS[t].name}</span>`;
-    d.onclick=()=>{ sel=i; drawHotbar(); if(document.pointerLockElement!==cv) cv.requestPointerLock(); };
+    d.onclick=()=>{ sel=i; drawHotbar(); if(!playing) startPlay(); };
     hotbarEl.appendChild(d);
   });
 }
