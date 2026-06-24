@@ -79,16 +79,18 @@
 
 <script>
 // Affiche toute erreur de chargement (CDN bloqué, module non chargé…) au lieu d'échouer en silence
-window.addEventListener('error', e=>{
+function showLoadError(msg){
   const o=document.getElementById('overlay'); if(!o) return;
   o.classList.remove('hidden');
   o.querySelector('.card').innerHTML =
     '<h1 style="font-size:30px">Oups…</h1>'+
-    '<p>Le moteur 3D n\'a pas pu se charger.<br>'+
-    'C\'est souvent dû au CDN bloqué (réseau, iframe, hors-ligne).</p>'+
-    '<p style="font-size:12px;opacity:.8">Détail : '+ (e.message||e.type) +'</p>'+
-    '<p style="font-size:13px">👉 Ouvre <b>index.html</b> en local, ou utilise la version GitHub&nbsp;Pages.</p>';
-}, true);
+    '<p>Le moteur 3D n\'a pas pu se charger ou s\'exécuter.<br>'+
+    'Souvent dû à un hôte qui n\'exécute pas les modules (ex. htmlpreview) ou un CDN bloqué.</p>'+
+    '<p style="font-size:12px;opacity:.8">Détail : '+ (msg||'inconnu') +'</p>'+
+    '<p style="font-size:13px">👉 Ouvre la page via <b>raw.githack.com</b> ou <b>index.html</b> en local.</p>';
+}
+window.addEventListener('error', e=> showLoadError(e.message||e.type), true);
+window.addEventListener('unhandledrejection', e=> showLoadError(e.reason&&(e.reason.message||e.reason)));
 </script>
 <script type="module">
 // Import direct par URL (pas d'importmap : il serait ignore si la page est injectee, ex. htmlpreview)
