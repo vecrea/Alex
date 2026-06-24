@@ -3,593 +3,483 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Les Brumes d'Eldoria — RPG</title>
+<title>Craftbox — un mini Minecraft</title>
 <style>
-  :root{
-    --bg:#0d0b14; --panel:#161324; --panel2:#1f1a30;
-    --ink:#e8e3f0; --muted:#9a90b8; --accent:#c9a227; --accent2:#7b5cff;
-    --danger:#e0556b; --good:#46c98b; --mana:#4aa3ff; --border:#2c2640;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{
-    background:radial-gradient(1200px 800px at 70% -10%, #221a3a 0%, var(--bg) 60%);
-    color:var(--ink);
-    font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
-    display:flex; align-items:center; justify-content:center; min-height:100%; padding:24px;
-  }
-  .game{
-    width:min(800px,100%);
-    background:linear-gradient(180deg,var(--panel),#120f1f);
-    border:1px solid var(--border); border-radius:18px;
-    box-shadow:0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
-    overflow:hidden;
-  }
-  header{
-    padding:18px 26px 14px; border-bottom:1px solid var(--border);
-    background:linear-gradient(180deg,rgba(123,92,255,.10),transparent);
-    display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
-  }
-  h1{margin:0; font-size:23px; letter-spacing:.5px;
-    background:linear-gradient(90deg,var(--accent),#f3dd8e);
-    -webkit-background-clip:text; background-clip:text; color:transparent;}
-  .sub{color:var(--muted); font-size:13px; margin-top:4px; font-family:system-ui,sans-serif}
-  .toolbar{display:flex; gap:6px; flex-shrink:0}
-  .tool{font-family:system-ui,sans-serif; font-size:12px; background:var(--panel2);
-    border:1px solid var(--border); color:var(--muted); padding:7px 10px; border-radius:9px; cursor:pointer;}
-  .tool:hover{color:var(--ink); border-color:var(--accent2)}
-  .tool.on{color:var(--accent); border-color:var(--accent)}
-  .stats{display:flex; gap:8px; flex-wrap:wrap; padding:13px 26px;
-    border-bottom:1px solid var(--border); font-family:system-ui,sans-serif; font-size:12.5px;}
-  .chip{background:var(--panel2); border:1px solid var(--border); padding:6px 11px;
-    border-radius:999px; color:var(--muted)}
-  .chip b{color:var(--ink)}
-  .chip .hp{color:var(--good); letter-spacing:1px}
-  .chip .en{color:var(--mana); letter-spacing:1px}
-  .xpwrap{flex:1 1 140px; min-width:120px; display:flex; align-items:center; gap:8px;
-    background:var(--panel2); border:1px solid var(--border); padding:5px 11px; border-radius:999px}
-  .xpwrap small{color:var(--muted); white-space:nowrap}
-  .xpbar{flex:1; height:7px; background:#2a2440; border-radius:6px; overflow:hidden}
-  .xpbar>i{display:block; height:100%; background:linear-gradient(90deg,var(--accent2),#b59bff); transition:width .35s}
-  .scene{padding:22px 26px 8px; min-height:120px}
-  .where{font-family:system-ui,sans-serif; font-size:12px; text-transform:uppercase;
-    letter-spacing:2px; color:var(--accent2); margin-bottom:10px; display:flex; align-items:center; gap:8px}
-  .act{font-size:10px; background:var(--panel2); border:1px solid var(--border);
-    padding:2px 8px; border-radius:999px; letter-spacing:1px}
-  .text{font-size:17px; line-height:1.65}
-  .text p{margin:0 0 12px}
-  .text .ev{color:var(--accent); font-style:italic}
-  .text .say{color:#d7cdf3}
-  .choices{padding:8px 26px 24px; display:flex; flex-direction:column; gap:10px}
-  button.choice{text-align:left; font:inherit; font-size:16px; background:var(--panel2); color:var(--ink);
-    border:1px solid var(--border); border-radius:12px; padding:13px 16px; cursor:pointer; transition:.15s;
-    display:flex; align-items:center; gap:10px;}
-  button.choice:hover{border-color:var(--accent2); transform:translateX(3px); background:#251f3a}
-  button.choice .arrow{color:var(--accent2)}
-  button.choice.atk:hover{border-color:var(--danger)}
-  button.choice.def:hover{border-color:var(--accent)}
-  button.choice.heal:hover{border-color:var(--good)}
-  button.choice.skill{border-color:#3a2f5e; background:#241d3c}
-  button.choice.skill:hover{border-color:var(--mana)}
-  button.choice:disabled{opacity:.4; cursor:not-allowed; transform:none}
-  button.choice .hint{margin-left:auto; font-family:system-ui,sans-serif; font-size:12px; color:var(--muted)}
-  /* création */
-  .create{padding:20px 26px 8px}
-  .create label{display:block; font-family:system-ui,sans-serif; font-size:13px; color:var(--muted); margin:0 0 6px}
-  .create input{width:100%; font:inherit; font-size:17px; padding:12px 14px; border-radius:12px;
-    background:var(--panel2); border:1px solid var(--border); color:var(--ink); margin-bottom:16px}
-  .create input:focus{outline:none; border-color:var(--accent2)}
-  .classes{display:grid; grid-template-columns:1fr; gap:10px}
-  @media(min-width:560px){.classes{grid-template-columns:1fr 1fr 1fr}}
-  .cls{cursor:pointer; border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--panel2); transition:.15s}
-  .cls:hover{border-color:var(--accent2); transform:translateY(-2px)}
-  .cls.sel{border-color:var(--accent); background:#251f3a}
-  .cls .ic{font-size:26px}
-  .cls .nm{font-weight:bold; margin:6px 0 2px}
-  .cls .ds{font-family:system-ui,sans-serif; font-size:12px; color:var(--muted); line-height:1.5}
-  .enemy{margin:0 26px 14px; padding:14px 16px; border:1px solid var(--border); border-radius:12px;
-    background:linear-gradient(180deg,rgba(224,85,107,.10),transparent); font-family:system-ui,sans-serif}
-  .enemy .en{font-weight:600; font-size:15px}
-  .bar{height:10px; background:#2a2440; border-radius:6px; overflow:hidden; margin-top:8px}
-  .bar>i{display:block; height:100%; background:linear-gradient(90deg,var(--danger),#ff8a9c); transition:width .3s}
-  .log{margin:8px 26px 0; font-family:system-ui,sans-serif; font-size:13px; color:var(--muted); min-height:18px}
-  .log .hit{color:var(--danger)} .log .you{color:var(--good)} .log .crit{color:var(--accent)} .log .lvl{color:var(--accent2)}
-  .end{color:var(--accent); font-weight:bold}
-  .death{color:var(--danger)} .win{color:var(--good)}
-  footer{padding:11px 26px; border-top:1px solid var(--border); color:var(--muted);
-    font-size:11.5px; font-family:system-ui,sans-serif; text-align:center}
-  .saved{color:var(--good)!important}
+  *{box-sizing:border-box; margin:0; padding:0}
+  html,body{height:100%; overflow:hidden; background:#7ec0ee; font-family:system-ui,"Segoe UI",sans-serif}
+  #c{display:block; width:100vw; height:100vh}
+
+  /* Réticule */
+  #cross{position:fixed; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:22px; height:22px; pointer-events:none; mix-blend-mode:difference; z-index:5}
+  #cross::before,#cross::after{content:""; position:absolute; background:#fff}
+  #cross::before{left:50%; top:0; width:2px; height:100%; transform:translateX(-50%)}
+  #cross::after{top:50%; left:0; height:2px; width:100%; transform:translateY(-50%)}
+
+  /* Barre d'inventaire */
+  #hotbar{position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
+    display:flex; gap:6px; padding:6px; background:rgba(0,0,0,.35);
+    border:2px solid rgba(0,0,0,.5); border-radius:10px; z-index:6}
+  .slot{width:52px; height:52px; border-radius:8px; border:2px solid rgba(255,255,255,.25);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:#fff; font-size:11px; cursor:pointer; position:relative; user-select:none;
+    text-shadow:0 1px 2px #000}
+  .slot .sw{width:26px; height:26px; border-radius:4px; box-shadow:inset 0 0 0 2px rgba(0,0,0,.25)}
+  .slot.on{border-color:#fff; box-shadow:0 0 0 2px #fff, 0 0 14px rgba(255,255,255,.4)}
+  .slot .num{position:absolute; top:2px; left:5px; opacity:.6; font-size:10px}
+
+  /* HUD info */
+  #info{position:fixed; top:12px; left:12px; color:#fff; z-index:6;
+    background:rgba(0,0,0,.32); padding:8px 12px; border-radius:8px; font-size:12.5px; line-height:1.5;
+    text-shadow:0 1px 2px #000; max-width:280px}
+  #info b{color:#ffe08a}
+
+  /* Écran de démarrage */
+  #overlay{position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center;
+    background:radial-gradient(900px 600px at 50% 30%, rgba(90,160,90,.35), rgba(0,0,0,.78));
+    backdrop-filter:blur(2px); color:#fff; text-align:center}
+  #overlay .card{max-width:520px; padding:30px 34px}
+  #overlay h1{font-size:46px; letter-spacing:2px; margin-bottom:6px;
+    text-shadow:3px 3px 0 #2c5d2c, 6px 6px 0 rgba(0,0,0,.35)}
+  #overlay p{opacity:.92; line-height:1.7; font-size:14px; margin:14px 0}
+  #overlay kbd{background:#fff; color:#222; border-radius:5px; padding:1px 7px;
+    font-family:inherit; font-weight:600; font-size:12px; box-shadow:0 2px 0 #999}
+  #play{margin-top:14px; font-size:18px; font-weight:700; letter-spacing:1px; cursor:pointer;
+    padding:13px 40px; border:none; border-radius:10px; color:#fff;
+    background:linear-gradient(#6cbf3f,#4a9a26); box-shadow:0 5px 0 #357018, 0 8px 20px rgba(0,0,0,.4)}
+  #play:active{transform:translateY(3px); box-shadow:0 2px 0 #357018}
+  .hidden{display:none !important}
 </style>
 </head>
 <body>
-<div class="game">
-  <header>
-    <div>
-      <h1 id="title">⚔ Les Brumes d'Eldoria</h1>
-      <div class="sub" id="tagline"></div>
-    </div>
-    <div class="toolbar">
-      <button class="tool" id="btnLang">EN</button>
-      <button class="tool" id="btnSound">🔊</button>
-      <button class="tool" id="btnSave"></button>
-      <button class="tool" id="btnReset"></button>
-    </div>
-  </header>
-  <div class="stats" id="stats"></div>
-  <div class="scene">
-    <div class="where"><span class="act" id="act"></span><span id="where"></span></div>
-    <div class="text" id="text"></div>
+<canvas id="c"></canvas>
+<div id="cross"></div>
+<div id="info">
+  <div><b>Craftbox</b> — mini Minecraft</div>
+  <div>Pos <span id="pos">0,0,0</span> · FPS <span id="fps">0</span></div>
+  <div style="opacity:.8;margin-top:4px">Clic gauche : casser · Clic droit : poser<br>WASD : bouger · Espace : sauter · 1-7 : bloc</div>
+</div>
+<div id="hotbar"></div>
+
+<div id="overlay">
+  <div class="card">
+    <h1>CRAFTBOX</h1>
+    <p>Un petit Minecraft dans ton navigateur.<br>
+    Explore, casse et pose des blocs dans un monde infini généré.</p>
+    <p style="font-size:13px;opacity:.85">
+      <kbd>Z/W</kbd><kbd>Q/A</kbd><kbd>S</kbd><kbd>D</kbd> se déplacer ·
+      <kbd>Espace</kbd> sauter · <kbd>Souris</kbd> regarder<br>
+      <kbd>Clic G</kbd> casser · <kbd>Clic D</kbd> poser · <kbd>Molette</kbd> / <kbd>1-7</kbd> choisir le bloc ·
+      <kbd>Échap</kbd> libérer la souris
+    </p>
+    <button id="play">▶ JOUER</button>
   </div>
-  <div id="enemyBox"></div>
-  <div class="log" id="log"></div>
-  <div class="choices" id="choices"></div>
-  <footer id="footer"></footer>
 </div>
 
-<script>
-/* =========================================================================
-   LES BRUMES D'ELDORIA — RPG bilingue
-   Création de personnage · classes & compétences · niveaux/XP · combat tour
-   par tour · sauvegarde · sons synthétisés. Tout dans un seul fichier.
-   ========================================================================= */
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
 
-/* ---------- i18n ---------- */
-let LANG="fr";
-const t = o => (typeof o==="string" ? o : (typeof o==="function"? o() : (o[LANG] ?? o.fr)));
-const nm = () => S.name || (LANG==="fr"?"Voyageur":"Traveler");
+// ---------------------------------------------------------------------------
+//  Réglages du monde
+// ---------------------------------------------------------------------------
+const CHUNK = 16;            // taille d'un chunk en X/Z
+const WORLD_H = 48;          // hauteur max du monde
+const RENDER = 4;            // rayon de chunks rendus autour du joueur
+const REACH = 6;             // portée d'interaction (blocs)
 
-const UI = {
-  tagline:{fr:"Jeu de rôle · forge ton héros, brise la malédiction",
-           en:"A role-playing game · forge your hero, break the curse"},
-  save:{fr:"💾 Sauver",en:"💾 Save"}, saved:{fr:"✓ Sauvé",en:"✓ Saved"},
-  reset:{fr:"⟳ Nouveau",en:"⟳ New"},
-  bagEmpty:{fr:"Sac vide",en:"Empty bag"}, gold:{fr:"Or",en:"Gold"},
-  lvl:{fr:"Niv.",en:"Lv."}, restartBtn:{fr:"— Recommencer —",en:"— Restart —"},
-  // création
-  createTitle:{fr:"Création de ton héros",en:"Create your hero"},
-  whoTitle:{fr:"Avant de partir dans les Brumes...",en:"Before you enter the Mists..."},
-  whoText:{fr:"<p>Le destin d'Eldoria reposera bientôt sur tes épaules. Mais d'abord, dis-moi : <span class=\"ev\">qui es-tu ?</span></p>",
-           en:"<p>The fate of Eldoria will soon rest on your shoulders. But first, tell me: <span class=\"ev\">who are you?</span></p>"},
-  nameLabel:{fr:"Ton nom",en:"Your name"},
-  namePlaceholder:{fr:"Entre ton nom de héros...",en:"Enter your hero's name..."},
-  classLabel:{fr:"Ta voie",en:"Your path"},
-  begin:{fr:"⚔ Commencer l'aventure",en:"⚔ Begin the adventure"},
-  resume:{fr:"▸ Reprendre ma partie",en:"▸ Resume my game"},
-  newGame:{fr:"✦ Nouvelle partie",en:"✦ New game"},
-  // combat
-  attack:{fr:"🗡 Attaquer",en:"🗡 Attack"},
-  defend:{fr:"🛡 Se défendre",en:"🛡 Defend"},
-  drink:{fr:"🧪 Boire une potion",en:"🧪 Drink a potion"},
-  flee:{fr:"🏃 Fuir",en:"🏃 Flee"},
-  cost:{fr:n=>`${n} én.`,en:n=>`${n} en.`},
-  cYouHit:{fr:n=>`Tu frappes (−${n}).`,en:n=>`You strike (−${n}).`},
-  cYouCrit:{fr:n=>`COUP CRITIQUE ! (−${n})`,en:n=>`CRITICAL HIT! (−${n})`},
-  cEnHit:{fr:(e,n)=>`${e} te blesse (−${n} PV).`,en:(e,n)=>`${e} wounds you (−${n} HP).`},
-  cEnMiss:{fr:e=>`Tu esquives l'attaque de ${e} !`,en:e=>`You dodge ${e}'s attack!`},
-  cDefend:{fr:"Tu lèves ta garde (dégâts réduits).",en:"You raise your guard (reduced damage)."},
-  cHeal:{fr:"La potion te restaure (+4 PV).",en:"The potion restores you (+4 HP)."},
-  cNoPotion:{fr:"Tu n'as pas de potion.",en:"You have no potion."},
-  cNoEnergy:{fr:"Pas assez d'énergie.",en:"Not enough energy."},
-  cFled:{fr:"Tu parviens à fuir.",en:"You manage to flee."},
-  cNoFlee:{fr:"Impossible de fuir ce combat !",en:"You cannot flee this fight!"},
-  cXP:{fr:n=>`Victoire ! +${n} XP.`,en:n=>`Victory! +${n} XP.`},
-  cLevelUp:{fr:l=>`⭐ NIVEAU ${l} ! PV max +2, attaque +1, soigné à fond.`,
-            en:l=>`⭐ LEVEL ${l}! Max HP +2, attack +1, fully healed.`},
+// Types de blocs
+const B = { AIR:0, GRASS:1, DIRT:2, STONE:3, SAND:4, WOOD:5, LEAVES:6, WATER:7, PLANK:8 };
+const BLOCKS = {
+  [B.GRASS]:  { name:'Herbe',   top:'#6bbf3f', side:'#8a6a3a', bottom:'#7a5a32' },
+  [B.DIRT]:   { name:'Terre',   top:'#7a5a32', side:'#7a5a32', bottom:'#7a5a32' },
+  [B.STONE]:  { name:'Pierre',  top:'#8a8a90', side:'#8a8a90', bottom:'#8a8a90' },
+  [B.SAND]:   { name:'Sable',   top:'#e3d39b', side:'#e3d39b', bottom:'#e3d39b' },
+  [B.WOOD]:   { name:'Bois',    top:'#9c7b48', side:'#6e5026', bottom:'#9c7b48' },
+  [B.LEAVES]: { name:'Feuilles',top:'#3f8f33', side:'#3f8f33', bottom:'#3f8f33' },
+  [B.WATER]:  { name:'Eau',     top:'#3a7bd5', side:'#3a7bd5', bottom:'#3a7bd5' },
+  [B.PLANK]:  { name:'Planche', top:'#c39a5c', side:'#c39a5c', bottom:'#c39a5c' },
 };
+const HOTBAR = [B.GRASS, B.DIRT, B.STONE, B.SAND, B.WOOD, B.LEAVES, B.PLANK];
 
-const CLASSES = {
-  guerrier:{ic:"🛡", name:{fr:"Guerrier",en:"Warrior"},
-    desc:{fr:"Robuste et brutal. Beaucoup de PV. Compétence : Frappe puissante (gros dégâts).",
-          en:"Tough and brutal. Lots of HP. Skill: Mighty Blow (heavy damage)."},
-    pvmax:9, atk:3, energymax:6, regen:2,
-    skill:{name:{fr:"Frappe puissante",en:"Mighty Blow"}, cost:3,
-           dmg:{fr:"dégâts doublés",en:"double damage"}}},
-  mage:{ic:"🔮", name:{fr:"Mage",en:"Mage"},
-    desc:{fr:"Fragile mais dévastateur. Compétence : Boule de feu (dégâts magiques massifs).",
-          en:"Fragile but devastating. Skill: Fireball (massive magic damage)."},
-    pvmax:6, atk:2, energymax:8, regen:3,
-    skill:{name:{fr:"Boule de feu",en:"Fireball"}, cost:4,
-           dmg:{fr:"7 dégâts magiques",en:"7 magic damage"}}},
-  rodeur:{ic:"🏹", name:{fr:"Rôdeur",en:"Ranger"},
-    desc:{fr:"Agile et précis. Compétence : Tir précis (coup critique garanti + esquive).",
-          en:"Agile and precise. Skill: Precise Shot (guaranteed crit + dodge)."},
-    pvmax:7, atk:2, energymax:6, regen:2,
-    skill:{name:{fr:"Tir précis",en:"Precise Shot"}, cost:3,
-           dmg:{fr:"critique garanti + esquive",en:"guaranteed crit + dodge"}}},
-};
-
-const items = {
-  torche:{fr:"🔥 Torche",en:"🔥 Torch"}, epee:{fr:"🗡 Épée runique",en:"🗡 Runic sword"},
-  excalibur:{fr:"⚔ Épée d'Eldoria",en:"⚔ Sword of Eldoria"}, cle:{fr:"🔑 Clé rouillée",en:"🔑 Rusty key"},
-  amulette:{fr:"📿 Amulette",en:"📿 Amulet"}, potion:{fr:"🧪 Potion",en:"🧪 Potion"},
-  pain:{fr:"🍞 Pain",en:"🍞 Bread"}, carte:{fr:"🗺 Carte",en:"🗺 Map"},
-  bouclier:{fr:"🛡 Bouclier",en:"🛡 Shield"}, gemme:{fr:"💎 Gemme bleue",en:"💎 Blue gem"},
-};
-
-/* ---------- son ---------- */
-let SOUND=true, actx=null;
-function beep(freq,dur=0.12,type="sine",vol=0.18){
-  if(!SOUND) return;
-  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
-    const o=actx.createOscillator(), g=actx.createGain();
-    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(actx.destination);
-    g.gain.setValueAtTime(vol,actx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+dur);
-    o.start(); o.stop(actx.currentTime+dur);
-  }catch(e){}
+// ---------------------------------------------------------------------------
+//  Bruit de terrain (value noise déterministe, sans dépendance)
+// ---------------------------------------------------------------------------
+function hash(x, z){
+  let h = x * 374761393 + z * 668265263;
+  h = (h ^ (h >> 13)) * 1274126177;
+  return ((h ^ (h >> 16)) >>> 0) / 4294967295;
 }
-const sfx={
-  click:()=>beep(440,0.06,"triangle",0.10),
-  pickup:()=>{beep(660,0.08);setTimeout(()=>beep(880,0.10),70);},
-  hit:()=>beep(160,0.12,"sawtooth",0.20),
-  player:()=>beep(520,0.09,"square",0.14),
-  crit:()=>{beep(700,0.08,"square");setTimeout(()=>beep(1040,0.12,"square"),60);},
-  spell:()=>{beep(300,0.10,"sawtooth",0.16);setTimeout(()=>beep(900,0.16,"sawtooth",0.14),80);},
-  heal:()=>{beep(540,0.10);setTimeout(()=>beep(720,0.12),90);},
-  level:()=>{[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.16,"triangle",0.16),i*90));},
-  win:()=>{[523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>beep(f,0.18,"triangle",0.18),i*130));},
-  death:()=>{[330,247,165].forEach((f,i)=>setTimeout(()=>beep(f,0.25,"sawtooth",0.18),i*160));},
-};
+function smooth(t){ return t*t*(3-2*t); }
+function valueNoise(x, z){
+  const x0 = Math.floor(x), z0 = Math.floor(z);
+  const fx = smooth(x - x0), fz = smooth(z - z0);
+  const a = hash(x0, z0),   b = hash(x0+1, z0);
+  const c = hash(x0, z0+1), d = hash(x0+1, z0+1);
+  return (a*(1-fx)+b*fx)*(1-fz) + (c*(1-fx)+d*fx)*fz;
+}
+const SEA = 12;
+function heightAt(x, z){
+  let h = 0, amp = 1, freq = 0.018, sum = 0;
+  for(let o=0;o<4;o++){ h += valueNoise(x*freq, z*freq)*amp; sum += amp; amp*=0.5; freq*=2.1; }
+  h /= sum;
+  return Math.floor(SEA + h*22);
+}
 
-/* ---------- état & sauvegarde ---------- */
-const KEY="eldoria_rpg_v1";
-const blank = () => ({ name:"", cls:"", pv:6, pvmax:6, atk:2, energy:6, energymax:6, regen:2,
-  lvl:1, xp:0, or:0, inv:[], flags:{}, scene:"_create", started:false });
-let S = blank();
+// ---------------------------------------------------------------------------
+//  Stockage du monde : map de chunks "cx,cz" -> Uint8Array(CHUNK*CHUNK*WORLD_H)
+// ---------------------------------------------------------------------------
+const chunks = new Map();      // données de blocs
+const meshes = new Map();      // groupes THREE par chunk
+const edits  = new Map();      // modifications du joueur "x,y,z" -> type
+const key = (cx,cz)=>cx+','+cz;
+const idx = (x,y,z)=> (y*CHUNK + z)*CHUNK + x;
 
-const XP_TABLE=[0,20,50,90,140,200]; // xp cumulé requis pour atteindre l'index+1
-const has = id => S.inv.includes(id);
-const add = id => { if(!has(id)){ S.inv.push(id); sfx.pickup(); } };
-const drop = id => { S.inv = S.inv.filter(x=>x!==id); };
-
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify({S,LANG,SOUND})); }catch(e){} }
-function load(){ try{ const d=JSON.parse(localStorage.getItem(KEY));
-  if(d&&d.S){ S=d.S; LANG=d.LANG||"fr"; SOUND=d.SOUND!==false; return true; } }catch(e){} return false; }
-
-function gainXP(amount){
-  S.xp += amount;
-  logAppend(t(UI.cXP)(amount),"you");
-  while(S.lvl<XP_TABLE.length && S.xp>=XP_TABLE[S.lvl]){
-    S.lvl++; S.pvmax+=2; S.atk+=1; S.pv=S.pvmax; sfx.level();
-    logAppend(t(UI.cLevelUp)(S.lvl),"lvl");
+function genChunk(cx, cz){
+  const data = new Uint8Array(CHUNK*CHUNK*WORLD_H);
+  for(let lx=0; lx<CHUNK; lx++){
+    for(let lz=0; lz<CHUNK; lz++){
+      const wx = cx*CHUNK + lx, wz = cz*CHUNK + lz;
+      const h = heightAt(wx, wz);
+      for(let y=0; y<=h; y++){
+        let t;
+        if(y===h)            t = h<=SEA+1 ? B.SAND : B.GRASS;
+        else if(y> h-4)      t = B.DIRT;
+        else                 t = B.STONE;
+        data[idx(lx,y,lz)] = t;
+      }
+      // eau jusqu'au niveau de la mer
+      for(let y=h+1; y<=SEA; y++) data[idx(lx,y,lz)] = B.WATER;
+      // arbres
+      if(h>SEA+1 && hash(wx*7, wz*7) > 0.985){
+        const th = 4 + Math.floor(hash(wx,wz)*3);
+        for(let t2=1;t2<=th;t2++) if(h+t2<WORLD_H) data[idx(lx,h+t2,lz)] = B.WOOD;
+        const cy = h+th;
+        for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++) for(let dy=0;dy<=2;dy++){
+          const lxx=lx+dx, lzz=lz+dz, yy=cy+dy;
+          if(lxx<0||lxx>=CHUNK||lzz<0||lzz>=CHUNK||yy>=WORLD_H) continue;
+          if(Math.abs(dx)+Math.abs(dz)+dy>4) continue;
+          if(data[idx(lxx,yy,lzz)]===B.AIR) data[idx(lxx,yy,lzz)] = B.LEAVES;
+        }
+      }
+    }
   }
+  return data;
+}
+function getChunk(cx, cz){
+  const k = key(cx,cz);
+  let d = chunks.get(k);
+  if(!d){ d = genChunk(cx,cz); chunks.set(k,d); }
+  return d;
+}
+function getBlock(x, y, z){
+  if(y<0 || y>=WORLD_H) return B.AIR;
+  const e = edits.get(x+','+y+','+z);
+  if(e!==undefined) return e;
+  const cx = Math.floor(x/CHUNK), cz = Math.floor(z/CHUNK);
+  const lx = x - cx*CHUNK, lz = z - cz*CHUNK;
+  return getChunk(cx,cz)[idx(lx,y,lz)];
+}
+function setBlock(x, y, z, t){
+  if(y<0 || y>=WORLD_H) return;
+  edits.set(x+','+y+','+z, t);
+  const cx = Math.floor(x/CHUNK), cz = Math.floor(z/CHUNK);
+  getChunk(cx,cz)[idx(x-cx*CHUNK, y, z-cz*CHUNK)] = t;
+  rebuild(cx,cz);
+  // rebuild des voisins si on touche un bord
+  const lx = x-cx*CHUNK, lz = z-cz*CHUNK;
+  if(lx===0) rebuild(cx-1,cz); if(lx===CHUNK-1) rebuild(cx+1,cz);
+  if(lz===0) rebuild(cx,cz-1); if(lz===CHUNK-1) rebuild(cx,cz+1);
 }
 
-/* ---------- combat ---------- */
-let COMBAT=null;
-function weaponBonus(){ return has("excalibur")?3 : has("epee")?2 : 0; }
-function killCheck(){ if(COMBAT.hp<=0){ const xp=COMBAT.xp; const win=COMBAT.win; gainXP(xp);
-  COMBAT=null; $("enemyBox").innerHTML=""; sfx.win(); setTimeout(()=>goto(win),60); return true; } return false; }
+// ---------------------------------------------------------------------------
+//  Three.js : scène, caméra, lumière
+// ---------------------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ canvas:document.getElementById('c'), antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87cdee);
+scene.fog = new THREE.Fog(0x87cdee, RENDER*CHUNK*0.55, RENDER*CHUNK*0.95);
 
-function playerAttack(){
-  const crit=Math.random()<0.20;
-  let dmg=S.atk+weaponBonus(); if(crit) dmg+=3;
-  COMBAT.hp-=dmg;
-  if(crit){ sfx.crit(); logLine(t(UI.cYouCrit)(dmg),"crit"); } else { sfx.player(); logLine(t(UI.cYouHit)(dmg),"you"); }
-  if(killCheck()) return; enemyTurn();
+const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 1000);
+scene.add(new THREE.AmbientLight(0xffffff, 0.72));
+const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+sun.position.set(0.5, 1, 0.3);
+scene.add(sun);
+
+function resize(){
+  const w=innerWidth, h=innerHeight;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
 }
-function playerSkill(){
-  const sk=CLASSES[S.cls].skill;
-  if(S.energy<sk.cost){ logLine(t(UI.cNoEnergy),"hit"); return; }
-  S.energy-=sk.cost;
-  if(S.cls==="guerrier"){ const dmg=(S.atk+weaponBonus())*2; COMBAT.hp-=dmg; sfx.crit();
-    logLine((LANG==="fr"?"Frappe puissante ! (−":"Mighty Blow! (−")+dmg+")","crit"); }
-  else if(S.cls==="mage"){ const dmg=7; COMBAT.hp-=dmg; sfx.spell();
-    logLine((LANG==="fr"?"Boule de feu ! (−":"Fireball! (−")+dmg+")","crit"); }
-  else { const dmg=S.atk+weaponBonus()+3; COMBAT.hp-=dmg; S.flags._dodge=true; sfx.spell();
-    logLine((LANG==="fr"?"Tir précis ! (−":"Precise Shot! (−")+dmg+(LANG==="fr"?", esquive prête)":", dodge ready)"),"crit"); }
-  if(killCheck()) return; enemyTurn();
-}
-function enemyTurn(){
-  let dmg=COMBAT.atk+Math.floor(Math.random()*2);
-  if(S.flags._dodge){ S.flags._dodge=false; sfx.click(); logLine(t(UI.cEnMiss)(t(COMBAT.nameObj)),"you"); }
-  else {
-    if(COMBAT.defending){ dmg=Math.max(0,dmg-3); COMBAT.defending=false; }
-    if(has("bouclier")) dmg=Math.max(0,dmg-1);
-    S.pv-=dmg; sfx.hit(); logLine(t(UI.cEnHit)(t(COMBAT.nameObj),dmg),"hit");
-    if(S.pv<=0){ renderStats(); return death(); }
+addEventListener('resize', resize); resize();
+
+// ---------------------------------------------------------------------------
+//  Textures procédurales (un peu de "bruit" par bloc, style pixel)
+// ---------------------------------------------------------------------------
+const texCache = {};
+function tex(hex){
+  if(texCache[hex]) return texCache[hex];
+  const s=16, cv=document.createElement('canvas'); cv.width=cv.height=s;
+  const g=cv.getContext('2d');
+  const base = new THREE.Color(hex);
+  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
+    const n=(Math.random()-0.5)*0.16;
+    const r=Math.max(0,Math.min(1,base.r+n)), gg=Math.max(0,Math.min(1,base.g+n)), b=Math.max(0,Math.min(1,base.b+n));
+    g.fillStyle=`rgb(${r*255|0},${gg*255|0},${b*255|0})`;
+    g.fillRect(x,y,1,1);
   }
-  S.energy=Math.min(S.energymax,S.energy+S.regen);
-  renderCombat(); save();
+  const t=new THREE.CanvasTexture(cv);
+  t.magFilter=THREE.NearestFilter; t.minFilter=THREE.NearestFilter;
+  texCache[hex]=t; return t;
 }
-function playerDefend(){ COMBAT.defending=true; S.energy=Math.min(S.energymax,S.energy+1); logLine(t(UI.cDefend)); sfx.click(); enemyTurn(); }
-function playerHeal(){ if(!has("potion")){ logLine(t(UI.cNoPotion),"hit"); return; }
-  drop("potion"); S.pv=Math.min(S.pvmax,S.pv+4); sfx.heal(); logLine(t(UI.cHeal),"you"); renderStats(); enemyTurn(); }
-function playerFlee(){ if(COMBAT.noFlee){ logLine(t(UI.cNoFlee),"hit"); enemyTurn(); return; }
-  const to=COMBAT.fleeTo; COMBAT=null; sfx.click(); $("enemyBox").innerHTML=""; logLine(t(UI.cFled)); setTimeout(()=>goto(to),40); }
-
-function startCombat(cfg){ COMBAT={nameObj:cfg.name, hp:cfg.hp, hpmax:cfg.hp, atk:cfg.atk, xp:cfg.xp||0,
-  win:cfg.win, fleeTo:cfg.fleeTo||S.scene, noFlee:!!cfg.noFlee, defending:false}; $("log").innerHTML=""; renderCombat(); }
-function renderCombat(){
-  renderStats();
-  if(!COMBAT){ $("enemyBox").innerHTML=""; return; }
-  const pct=Math.max(0,COMBAT.hp/COMBAT.hpmax*100);
-  $("enemyBox").innerHTML=`<div class="enemy"><div class="en">☠ ${t(COMBAT.nameObj)} — ${Math.max(0,COMBAT.hp)}/${COMBAT.hpmax} PV</div>
-    <div class="bar"><i style="width:${pct}%"></i></div></div>`;
-  const sk=CLASSES[S.cls].skill, c=$("choices"); c.innerHTML="";
-  const mk=(label,cls,fn,hint,dis)=>{ const b=document.createElement("button"); b.className="choice "+cls;
-    b.innerHTML=`<span class="arrow">▸</span> ${label}${hint?`<span class="hint">${hint}</span>`:""}`;
-    if(dis){ b.disabled=true; } else b.onclick=fn; c.appendChild(b); };
-  mk(t(UI.attack),"atk",playerAttack);
-  mk(t(sk.name),"skill",playerSkill,t(UI.cost)(sk.cost), S.energy<sk.cost);
-  mk(t(UI.defend),"def",playerDefend);
-  if(has("potion")) mk(t(UI.drink),"heal",playerHeal);
-  mk(t(UI.flee),"",playerFlee);
-}
-function logLine(msg,cls=""){ $("log").innerHTML=`<span class="${cls}">${msg}</span>`; }
-function logAppend(msg,cls=""){ $("log").innerHTML+=` <span class="${cls}">${msg}</span>`; }
-
-/* ---------- scènes (RP, narration immersive) ---------- */
-const A1={fr:"ACTE I · La Forêt",en:"ACT I · The Forest"};
-const A2={fr:"ACTE II · Le Temple",en:"ACT II · The Temple"};
-const A3={fr:"ACTE III · La Tour",en:"ACT III · The Tower"};
-
-const scenes = {
-  intro:{ act:A1, lieu:{fr:"Lisière de la forêt",en:"Edge of the forest"},
-    txt:()=>({fr:`<p>La pluie tambourine sur ta capuche, ${nm()}. Devant toi s'étend la <span class="ev">forêt des Brumes</span> — et quelque part en son cœur dort l'épée d'Eldoria, seule arme capable de briser la malédiction qui ronge ton village.</p>
-      <p>Un panneau pourri indique deux chemins : un sentier boueux sous les arbres, et une grotte sombre exhalant une odeur de soufre. Ton instinct te dit que les deux mènent au danger.</p>`,
-      en:`<p>Rain drums on your hood, ${nm()}. Before you spreads the <span class="ev">Forest of Mists</span> — and somewhere at its heart sleeps the Sword of Eldoria, the only weapon that can break the curse devouring your village.</p>
-      <p>A rotten sign points two ways: a muddy trail under the trees, and a dark cave breathing out sulfur. Your gut says both lead to danger.</p>`}),
-    choix:[ {t:{fr:"Prendre le sentier boueux",en:"Take the muddy trail"},go:"sentier"},
-            {t:{fr:"Entrer dans la grotte sombre",en:"Enter the dark cave"},go:"grotte"},
-            {t:{fr:"Fouiller sous le panneau",en:"Search under the sign"},go:"panneau"} ]},
-  panneau:{ act:A1, lieu:{fr:"Lisière de la forêt",en:"Edge of the forest"},
-    txt:()=>{ if(!has("torche")){ add("torche"); return {fr:`<p>Tu écartes une planche disjointe. Dessous, une <span class="ev">torche</span> encore sèche et un briquet à silex t'attendent. « Voilà qui éclairera les ténèbres », te dis-tu.</p>`,
-        en:`<p>You pry loose a plank. Beneath it, a still-dry <span class="ev">torch</span> and a flint await. "This will light the dark," you murmur.</p>`}; }
-      return {fr:`<p>Il n'y a plus rien d'utile ici.</p>`,en:`<p>Nothing useful remains here.</p>`}; },
-    choix:[ {t:{fr:"Le sentier boueux",en:"The muddy trail"},go:"sentier"},
-            {t:{fr:"La grotte sombre",en:"The dark cave"},go:"grotte"} ]},
-  sentier:{ act:A1, lieu:{fr:"Cœur de la forêt",en:"Heart of the forest"},
-    txt:()=>({fr:`<p>Les arbres se referment au-dessus de toi. Près d'un feu mourant veille un <span class="ev">vieil ermite</span>. Il lève vers toi des yeux gris. <span class="say">« ${nm()}, n'est-ce pas ? La forêt murmure ton nom depuis ce matin. La nuit, les loups rôdent ici — une lame nue les fait fuir. »</span></p>`,
-      en:`<p>The trees close in overhead. By a dying fire sits an <span class="ev">old hermit</span>. He lifts grey eyes to you. <span class="say">"${nm()}, is it? The forest has whispered your name since dawn. At night the wolves prowl — a bared blade makes them flee."</span></p>`}),
-    choix:[ {t:{fr:"Parler à l'ermite",en:"Speak with the hermit"},go:"ermite"},
-            {t:{fr:"Poursuivre vers la clairière",en:"Press on to the glade"},go:"clairiere"} ]},
-  ermite:{ act:A1, lieu:{fr:"Le feu de l'ermite",en:"The hermit's fire"},
-    txt:()=>{ if(!S.flags.ermite){ S.flags.ermite=true; add("pain");
-      return {fr:`<p>L'ermite te tend un quignon de <span class="ev">pain</span>. <span class="say">« Au cœur de la clairière dort une stèle. L'or la flatte, mais c'est l'amulette des anciens qu'elle réclame. Au-delà t'attendent un gardien de pierre... et, tout au sommet de la Tour, celui qui jeta la malédiction. Sois prêt, ${nm()}. »</span></p>`,
-        en:`<p>The hermit offers you a crust of <span class="ev">bread</span>. <span class="say">"In the glade sleeps a stele. Gold flatters it, but it craves the ancients' amulet. Beyond waits a stone guardian... and atop the Tower, the one who cast the curse. Be ready, ${nm()}."</span></p>`}; }
-      return {fr:`<p><span class="say">« Je t'ai tout dit. Reviens vivant, ${nm()}. »</span></p>`,en:`<p><span class="say">"I've told you all. Come back alive, ${nm()}."</span></p>`}; },
-    choix:[ {t:{fr:"Vers la clairière",en:"To the glade"},go:"clairiere"},
-            {t:{fr:"Revenir à la lisière",en:"Back to the edge"},go:"intro"} ]},
-  grotte:{ act:A1, lieu:{fr:"La grotte de soufre",en:"The sulfur cave"},
-    txt:()=>{ if(!has("torche")){ sfx.death(); return {fr:`<p class="death">L'obscurité est totale. Tu avances à tâtons, le souffle court... et le sol se dérobe sous tes pieds. Tu bascules dans un gouffre sans fond. Ainsi s'achève ta quête, ${nm()}.</p>`,
-        en:`<p class="death">Utter darkness. You grope forward, breath short... and the floor gives way. You plunge into a bottomless pit. So ends your quest, ${nm()}.</p>`}; }
-      if(!S.flags.grotte){ S.flags.grotte=true; add("cle"); add("bouclier"); S.or+=3;
-        return {fr:`<p>Ta torche révèle des parois de cristal. Sur un autel reposent une <span class="ev">clé rouillée</span>, un vieux <span class="ev">bouclier</span> et trois pièces d'or. Tu rafles le tout.</p>`,
-          en:`<p>Your torch reveals crystal walls. On an altar lie a <span class="ev">rusty key</span>, an old <span class="ev">shield</span>, and three gold coins. You take it all.</p>`}; }
-      return {fr:`<p>L'autel est vide. Un tunnel descend vers la clairière.</p>`,en:`<p>The altar is bare. A tunnel descends to the glade.</p>`}; },
-    choix:()=>{ if(!has("torche")) return [{t:UI.restartBtn,restart:true}];
-      return [ {t:{fr:"Suivre le tunnel",en:"Follow the tunnel"},go:"clairiere"},
-               {t:{fr:"Ressortir",en:"Head back out"},go:"intro"} ]; }},
-  clairiere:{ act:A1, lieu:{fr:"Clairière de la stèle",en:"Glade of the stele"},
-    txt:()=>({fr:`<p>Une clairière baignée d'une lumière laiteuse. En son centre, une <span class="ev">stèle</span> couverte de runes attend une offrande. Derrière elle, une porte de pierre scelle l'entrée d'un temple.</p>${has("amulette")?`<p>L'amulette, tiède contre ta paume, se met à vibrer.</p>`:``}`,
-      en:`<p>A glade bathed in milky light. At its center, a rune-carved <span class="ev">stele</span> awaits an offering. Behind it, a stone door seals a temple.</p>${has("amulette")?`<p>The amulet, warm against your palm, begins to hum.</p>`:``}`}),
-    choix:()=>{ const c=[];
-      if(has("amulette")) c.push({t:{fr:"Offrir l'amulette à la stèle",en:"Offer the amulet"},go:"temple_ouvert"});
-      if(S.or>0) c.push({t:{fr:"Déposer ton or",en:"Lay down your gold"},go:"piege_or"});
-      if(has("cle")) c.push({t:{fr:"Essayer la clé sur la porte",en:"Try the key on the door"},go:"porte_cle"});
-      c.push({t:{fr:"Fouiller les fourrés",en:"Search the thickets"},go:"fourre"});
-      return c; }},
-  fourre:{ act:A1, lieu:{fr:"Fourrés",en:"Thickets"},
-    txt:()=>{ if(has("amulette")) return {fr:`<p>Tu as déjà l'amulette.</p>`,en:`<p>You already hold the amulet.</p>`};
-      if(S.flags.loupDone) return {fr:`<p>Les fourrés sont silencieux désormais.</p>`,en:`<p>The thickets are silent now.</p>`};
-      return {fr:`<p>Un grognement sourd... un <span class="ev">loup</span> énorme jaillit des fourrés, babines retroussées !</p>`,
-        en:`<p>A low growl... a huge <span class="ev">wolf</span> bursts from the thickets, fangs bared!</p>`}; },
-    onEnter:()=>{ if(!has("amulette")&&!S.flags.loupDone) startCombat({name:{fr:"Loup affamé",en:"Starving wolf"},hp:9,atk:2,xp:12,win:"loup_butin",fleeTo:"clairiere"}); },
-    choix:()=>{ if(has("amulette")||S.flags.loupDone) return [{t:{fr:"Retour à la stèle",en:"Back to the stele"},go:"clairiere"}]; return []; }},
-  loup_butin:{ act:A1, lieu:{fr:"Fourrés",en:"Thickets"},
-    onEnter:()=>{ S.flags.loupDone=true; add("amulette"); },
-    txt:()=>({fr:`<p>Le loup s'effondre dans un dernier râle. À son cou pendait une <span class="ev">amulette</span> ancienne — elle est à toi.</p>`,
-      en:`<p>The wolf collapses with a final whine. An ancient <span class="ev">amulet</span> hung at its neck — now yours.</p>`}),
-    choix:[{t:{fr:"Retour à la stèle",en:"Back to the stele"},go:"clairiere"}]},
-  piege_or:{ act:A1, lieu:{fr:"La stèle",en:"The stele"},
-    onEnter:()=>{ S.or=0; },
-    txt:()=>({fr:`<p>Tes pièces tintent sur la pierre. Les runes rougeoient... puis la stèle <span class="ev">engloutit ton or</span> sans s'ouvrir. Ce n'était pas la bonne offrande, ${nm()}.</p>`,
-      en:`<p>Your coins ring on the stone. The runes glow red... then the stele <span class="ev">swallows your gold</span> and stays shut. Wrong offering, ${nm()}.</p>`}),
-    choix:[{t:{fr:"Réfléchir et revenir",en:"Think and return"},go:"clairiere"}]},
-  porte_cle:{ act:A1, lieu:{fr:"Porte du temple",en:"Temple door"},
-    txt:()=>({fr:`<p>La clé grince mais refuse de tourner : cette porte n'obéit qu'à la magie. Tu remarques pourtant une petite <span class="ev">trappe</span> latérale qui, elle, pourrait céder au métal.</p>`,
-      en:`<p>The key grinds but won't turn — this door answers only to magic. Yet you spot a small side <span class="ev">hatch</span> that might give to steel.</p>`}),
-    choix:[ {t:{fr:"Forcer la trappe",en:"Force the hatch"},go:"reserve"},
-            {t:{fr:"Revenir à la stèle",en:"Back to the stele"},go:"clairiere"} ]},
-  reserve:{ act:A1, lieu:{fr:"Réserve cachée",en:"Hidden store"},
-    txt:()=>{ if(!S.flags.reserve){ S.flags.reserve=true; add("potion"); add("potion"); add("carte");
-      return {fr:`<p>Une réserve poussiéreuse. Sur une étagère : deux <span class="ev">potions de soin</span> et une vieille <span class="ev">carte</span> du temple. Bien joué, ${nm()}.</p>`,
-        en:`<p>A dusty store. On a shelf: two <span class="ev">healing potions</span> and an old <span class="ev">map</span> of the temple. Well done, ${nm()}.</p>`}; }
-      return {fr:`<p>La réserve est vide.</p>`,en:`<p>The store is empty.</p>`}; },
-    choix:[{t:{fr:"Revenir à la stèle",en:"Back to the stele"},go:"clairiere"}]},
-
-  temple_ouvert:{ act:A2, lieu:{fr:"Seuil du temple",en:"Temple threshold"},
-    onEnter:()=>{ drop("amulette"); },
-    txt:()=>({fr:`<p>L'amulette se dissout en une lumière éclatante. Dans un grondement de pierre, la <span class="ev">porte s'ouvre</span>. Un souffle glacé monte des profondeurs et caresse ton visage.</p>`,
-      en:`<p>The amulet melts into blazing light. With a grind of stone, the <span class="ev">door opens</span>. An icy breath rises from below and brushes your face.</p>`}),
-    choix:[{t:{fr:"Descendre dans le temple",en:"Descend into the temple"},go:"hall"}]},
-  hall:{ act:A2, lieu:{fr:"Hall du temple",en:"Temple hall"},
-    txt:()=>({fr:`<p>Un vaste hall aux colonnes brisées s'ouvre devant toi. Deux passages : à gauche, une salle d'armes ; à droite, un sanctuaire d'où émane une présence pesante. Au centre, un coffre oublié.</p>`,
-      en:`<p>A vast hall of broken columns opens before you. Two ways: left, an armory; right, a sanctuary heavy with presence. At the center, a forgotten chest.</p>`}),
-    choix:()=>{ const c=[ {t:{fr:"Salle d'armes (gauche)",en:"Armory (left)"},go:"armes"},
-      {t:{fr:"Sanctuaire (droite)",en:"Sanctuary (right)"},go:"gardien"} ];
-      if(!S.flags.coffre) c.splice(1,0,{t:{fr:"Ouvrir le coffre",en:"Open the chest"},go:"coffre"});
-      return c; }},
-  coffre:{ act:A2, lieu:{fr:"Coffre du hall",en:"Hall chest"},
-    onEnter:()=>{ S.flags.coffre=true; S.or+=10; add("gemme"); S.pvmax+=2; S.pv+=2; },
-    txt:()=>({fr:`<p>Le couvercle cède : <span class="ev">10 pièces d'or</span>, une <span class="ev">gemme bleue</span> qui pulse doucement, et une fiole de vitalité que tu bois aussitôt (<b>PV max +2</b>) !</p>`,
-      en:`<p>The lid gives way: <span class="ev">10 gold</span>, a softly pulsing <span class="ev">blue gem</span>, and a vial of vitality you drink at once (<b>Max HP +2</b>)!</p>`}),
-    choix:[{t:{fr:"Revenir au hall",en:"Back to the hall"},go:"hall"}]},
-  armes:{ act:A2, lieu:{fr:"Salle d'armes",en:"Armory"},
-    txt:()=>{ if(!S.flags.armes){ S.flags.armes=true; if(!has("epee")) add("epee");
-      return {fr:`<p>Des râteliers rouillés. Une <span class="ev">épée runique</span> luit encore, parfaitement équilibrée. Tu la saisis — elle te rend plus dangereux au combat.</p>`,
-        en:`<p>Rusted racks. A <span class="ev">runic sword</span> still glows, perfectly balanced. You take it — it makes you deadlier in battle.</p>`}; }
-      return {fr:`<p>Plus rien à prendre ici.</p>`,en:`<p>Nothing left to take here.</p>`}; },
-    choix:[{t:{fr:"Revenir au hall",en:"Back to the hall"},go:"hall"}]},
-  gardien:{ act:A2, lieu:{fr:"Sanctuaire d'Eldoria",en:"Sanctuary of Eldoria"},
-    txt:()=>({fr:`<p>Un <span class="ev">gardien de pierre</span> aux yeux de braise se dresse devant l'escalier. Sa voix gronde comme un éboulement : <span class="say">« Réponds, mortel : que vainc l'obscurité sans jamais brûler ? »</span></p>`,
-      en:`<p>A <span class="ev">stone guardian</span> with ember eyes stands before the stair. Its voice rumbles like a rockslide: <span class="say">"Answer, mortal: what conquers darkness yet never burns?"</span></p>`}),
-    choix:[ {t:{fr:"« La lumière. »",en:"\"Light.\""},go:"gardien_sage"},
-            {t:{fr:"« Le feu. »",en:"\"Fire.\""},go:"gardien_combat"},
-            {t:{fr:"« Le courage. »",en:"\"Courage.\""},go:"gardien_combat"} ]},
-  gardien_sage:{ act:A2, lieu:{fr:"Sanctuaire d'Eldoria",en:"Sanctuary of Eldoria"},
-    txt:()=>({fr:`<p>« La lumière. » Les yeux de braise du gardien s'éteignent lentement. <span class="say">« Sage, ${nm()}. »</span> Il s'incline et se fige, libérant l'escalier vers la Tour.</p>`,
-      en:`<p>"Light." The guardian's ember eyes slowly dim. <span class="say">"Wise, ${nm()}."</span> It bows and stills, freeing the stair to the Tower.</p>`}),
-    choix:[{t:{fr:"Monter vers la Tour",en:"Climb to the Tower"},go:"tour_pied"}]},
-  gardien_combat:{ act:A2, lieu:{fr:"Sanctuaire d'Eldoria",en:"Sanctuary of Eldoria"},
-    txt:()=>({fr:`<p>Mauvaise réponse ! Le gardien s'anime dans un fracas de pierre et lève un poing gros comme un rocher.</p>`,
-      en:`<p>Wrong! The guardian wakes with a crash of stone and raises a fist the size of a boulder.</p>`}),
-    onEnter:()=>{ startCombat({name:{fr:"Gardien de pierre",en:"Stone guardian"},hp:16,atk:3,xp:25,win:"tour_pied",noFlee:true}); },
-    choix:[]},
-
-  tour_pied:{ act:A3, lieu:{fr:"Pied de la Tour",en:"Foot of the Tower"},
-    txt:()=>({fr:`<p>Au-delà du sanctuaire se dresse la <span class="ev">Tour d'Eldoria</span>, qui transperce les nuages. Tout en haut repose l'épée légendaire — gardée par celui qui jeta la malédiction : le <span class="ev">Sorcier des Brumes</span>. Un escalier en spirale s'enfonce dans la pénombre.</p>`,
-      en:`<p>Past the sanctuary rises the <span class="ev">Tower of Eldoria</span>, piercing the clouds. At its peak rests the legendary sword — kept by the one who cast the curse: the <span class="ev">Mist Sorcerer</span>. A spiral stair winds up into gloom.</p>`}),
-    choix:()=>{ const c=[{t:{fr:"Gravir l'escalier",en:"Climb the stair"},go:"palier"}];
-      if(!S.flags.armes) c.push({t:{fr:"D'abord récupérer l'épée runique",en:"First grab the runic sword"},go:"armes"});
-      return c; }},
-  palier:{ act:A3, lieu:{fr:"Palier de la Tour",en:"Tower landing"},
-    txt:()=>{ if(!S.flags.spectre) return {fr:`<p>À mi-hauteur, un <span class="ev">spectre glacé</span> s'arrache du mur en hurlant pour défendre son maître !</p>`,
-        en:`<p>Halfway up, a <span class="ev">frost wraith</span> tears from the wall, shrieking to defend its master!</p>`};
-      return {fr:`<p>Le palier est calme. L'escalier continue vers le sommet.</p>`,en:`<p>The landing is calm. The stair climbs on to the summit.</p>`}; },
-    onEnter:()=>{ if(!S.flags.spectre) startCombat({name:{fr:"Spectre glacé",en:"Frost wraith"},hp:14,atk:3,xp:22,win:"palier_ok",fleeTo:"tour_pied"}); },
-    choix:()=>{ if(!S.flags.spectre) return []; return [{t:{fr:"Atteindre le sommet",en:"Reach the summit"},go:"sommet"}]; }},
-  palier_ok:{ act:A3, lieu:{fr:"Palier de la Tour",en:"Tower landing"},
-    onEnter:()=>{ S.flags.spectre=true; },
-    txt:()=>({fr:`<p>Le spectre se dissipe en un souffle de givre. Le passage est libre.</p>`,en:`<p>The wraith scatters in a gust of frost. The way is clear.</p>`}),
-    choix:[{t:{fr:"Atteindre le sommet",en:"Reach the summit"},go:"sommet"}]},
-  sommet:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    txt:()=>({fr:`<p>Au sommet, le <span class="ev">Sorcier des Brumes</span> flotte devant l'épée d'Eldoria, ardente de runes. <span class="say">« Tu as bien combattu, ${nm()}... mais la malédiction est ma puissance même. Tu ne prendras pas la lame. »</span></p>`,
-      en:`<p>At the top, the <span class="ev">Mist Sorcerer</span> hovers before the sword of Eldoria, ablaze with runes. <span class="say">"You fought well, ${nm()}... but the curse is my very power. You shall not take the blade."</span></p>`}),
-    choix:()=>{ const c=[{t:{fr:"L'affronter",en:"Face him in battle"},go:"boss"}];
-      if(has("gemme")) c.push({t:{fr:"Brandir la gemme bleue",en:"Raise the blue gem"},go:"gemme_fin"});
-      return c; }},
-  gemme_fin:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    onEnter:()=>{ drop("gemme"); },
-    txt:()=>({fr:`<p>Tu brandis la <span class="ev">gemme bleue</span> : elle explose d'une lumière pure. Le sorcier hurle — <span class="say">« La Larme d'Eldoria ! Où l'as-tu... »</span> — la brume qui le compose se déchire. Affaibli, il n'est plus qu'un homme.</p>`,
-      en:`<p>You raise the <span class="ev">blue gem</span>: it bursts with pure light. The sorcerer screams — <span class="say">"The Tear of Eldoria! Where did you—"</span> — the mist that forms him tears apart. Weakened, he is but a man.</p>`}),
-    choix:[{t:{fr:"Achever le combat",en:"Finish the fight"},go:"boss_faible"}]},
-  boss:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    onEnter:()=>{ startCombat({name:{fr:"Sorcier des Brumes",en:"Mist Sorcerer"},hp:26,atk:4,xp:50,win:"victoire",noFlee:true}); },
-    txt:()=>({fr:`<p>La brume tournoie autour de toi. Le combat final commence !</p>`,en:`<p>The mist whirls around you. The final battle begins!</p>`}),
-    choix:[]},
-  boss_faible:{ act:A3, lieu:{fr:"Sommet de la Tour",en:"Tower summit"},
-    onEnter:()=>{ startCombat({name:{fr:"Sorcier affaibli",en:"Weakened Sorcerer"},hp:12,atk:2,xp:50,win:"victoire",noFlee:true}); },
-    txt:()=>({fr:`<p>Dépouillé de sa brume, le sorcier chancelle. Frappe, ${nm()} !</p>`,en:`<p>Stripped of his mist, the sorcerer staggers. Strike, ${nm()}!</p>`}),
-    choix:[]},
-  victoire:{ act:A3, lieu:{fr:"★ Fin",en:"★ Ending"},
-    onEnter:()=>{ S.flags.win=true; add("excalibur"); drop("epee"); sfx.win(); save(); },
-    txt:()=>({fr:`<p class="win">Le sorcier se dissipe dans un dernier cri. Tes doigts se referment sur l'<span class="ev">épée d'Eldoria</span> : une chaleur ancienne remonte le long de ton bras.</p>
-      <p class="end">La malédiction se brise. Tu redescends vers la lumière du jour, ${nm()}, héros d'Eldoria de niveau ${S.lvl}${S.or>0?`, ${S.or} pièces d'or au côté`:``}. <b>VICTOIRE.</b></p>`,
-      en:`<p class="win">The sorcerer dissolves with a final cry. Your fingers close on the <span class="ev">sword of Eldoria</span>: an ancient warmth flows up your arm.</p>
-      <p class="end">The curse shatters. You descend into daylight, ${nm()}, hero of Eldoria at level ${S.lvl}${S.or>0?`, ${S.or} gold at your side`:``}. <b>VICTORY.</b></p>`}),
-    choix:[{t:{fr:"⟳ Rejouer",en:"⟳ Play again"},restart:true}]},
-};
-
-/* ---------- mort ---------- */
-function death(){ sfx.death(); S.scene="_dead"; COMBAT=null; $("enemyBox").innerHTML="";
-  $("act").textContent=""; $("where").textContent=t({fr:"Mort",en:"Death"});
-  $("text").innerHTML=t({fr:`<p class="death">Tes forces t'abandonnent, ${nm()}. L'obscurité t'engloutit, et la malédiction d'Eldoria demeure... mais une autre tentative t'attend.</p>`,
-    en:`<p class="death">Your strength fails, ${nm()}. Darkness swallows you, and Eldoria's curse endures... yet another attempt awaits.</p>`});
-  $("log").innerHTML=""; renderStats();
-  const c=$("choices"); c.innerHTML="";
-  const b=document.createElement("button"); b.className="choice";
-  b.innerHTML=`<span class="arrow">▸</span> ${t(UI.restartBtn)}`;
-  b.onclick=()=>{ newGame(); }; c.appendChild(b); save();
-}
-
-/* ---------- rendu ---------- */
-const $ = id => document.getElementById(id);
-function renderStats(){
-  if(!S.started){ $("stats").innerHTML=""; return; }
-  const full=Math.max(0,S.pv), empty=Math.max(0,S.pvmax-S.pv);
-  let html=`<span class="chip">${CLASSES[S.cls]?CLASSES[S.cls].ic:""} <b>${S.name}</b></span>`;
-  html+=`<span class="chip">${t(UI.lvl)} <b>${S.lvl}</b></span>`;
-  html+=`<span class="chip"><b class="hp">${"♥".repeat(full)}${"♡".repeat(empty)}</b></span>`;
-  html+=`<span class="chip"><b class="en">${"◆".repeat(Math.max(0,S.energy))}${"◇".repeat(Math.max(0,S.energymax-S.energy))}</b></span>`;
-  html+=`<span class="chip">${t(UI.gold)} <b>${S.or}</b></span>`;
-  const need=XP_TABLE[S.lvl]??null, prev=XP_TABLE[S.lvl-1]??0;
-  const pct=need?Math.min(100,(S.xp-prev)/(need-prev)*100):100;
-  html+=`<span class="xpwrap"><small>XP</small><span class="xpbar"><i style="width:${pct}%"></i></span><small>${need?S.xp+"/"+need:"max"}</small></span>`;
-  if(S.inv.length) html+=S.inv.map(i=>`<span class="chip">${t(items[i]||{fr:i,en:i})}</span>`).join("");
-  $("stats").innerHTML=html;
-}
-
-/* ---------- création de personnage ---------- */
-let pickCls="guerrier";
-function showCreate(){
-  S.started=false; COMBAT=null; $("enemyBox").innerHTML=""; $("log").innerHTML=""; renderStats();
-  $("act").textContent=""; $("where").textContent=t(UI.createTitle);
-  $("text").innerHTML=t(UI.whoText);
-  const c=$("choices"); c.innerHTML="";
-  const wrap=document.createElement("div"); wrap.className="create";
-  wrap.innerHTML=`<label>${t(UI.nameLabel)}</label>
-    <input id="nameInput" maxlength="16" placeholder="${t(UI.namePlaceholder)}" value="${S.name||""}">
-    <label>${t(UI.classLabel)}</label>
-    <div class="classes" id="clsGrid"></div>`;
-  $("choices").appendChild(wrap);
-  const grid=wrap.querySelector("#clsGrid");
-  Object.entries(CLASSES).forEach(([key,cl])=>{
-    const d=document.createElement("div"); d.className="cls"+(key===pickCls?" sel":""); d.dataset.k=key;
-    d.innerHTML=`<div class="ic">${cl.ic}</div><div class="nm">${t(cl.name)}</div>
-      <div class="ds">${t(cl.desc)}</div>
-      <div class="ds" style="margin-top:6px;color:var(--accent)">♥ ${cl.pvmax} · ⚔ ${cl.atk} · ◆ ${cl.energymax}</div>`;
-    d.onclick=()=>{ pickCls=key; sfx.click(); grid.querySelectorAll(".cls").forEach(x=>x.classList.remove("sel")); d.classList.add("sel"); };
-    grid.appendChild(d);
+const matCache = {};
+function materialsFor(type){
+  if(matCache[type]) return matCache[type];
+  const def = BLOCKS[type];
+  const make = (hex)=> new THREE.MeshLambertMaterial({
+    map:tex(hex),
+    transparent: type===B.WATER, opacity: type===B.WATER?0.72:1
   });
-  const begin=document.createElement("button"); begin.className="choice"; begin.style.marginTop="8px";
-  begin.innerHTML=`<span class="arrow">▸</span> ${t(UI.begin)}`;
-  begin.onclick=()=>{ const nv=($("nameInput").value||"").trim();
-    const cl=CLASSES[pickCls];
-    S.name = nv || (LANG==="fr"?"Voyageur":"Traveler");
-    S.cls=pickCls; S.pvmax=cl.pvmax; S.pv=cl.pvmax; S.atk=cl.atk;
-    S.energymax=cl.energymax; S.energy=cl.energymax; S.regen=cl.regen;
-    S.lvl=1; S.xp=0; S.or=0; S.inv=[]; S.flags={}; S.started=true; sfx.pickup(); goto("intro"); };
-  $("choices").appendChild(begin);
+  // ordre des faces BoxGeometry : +x,-x,+y,-y,+z,-z
+  const side=make(def.side), top=make(def.top), bottom=make(def.bottom);
+  const m=[side,side,top,bottom,side,side];
+  matCache[type]=m; return m;
 }
 
-function newGame(){ S=blank(); S.scene="_create"; pickCls="guerrier"; save(); applyStaticLabels(); showCreate(); }
+// ---------------------------------------------------------------------------
+//  Construction de mesh par chunk (instancié par type, faces cachées ignorées)
+// ---------------------------------------------------------------------------
+const boxGeo = new THREE.BoxGeometry(1,1,1);
+function isSolid(t){ return t!==B.AIR && t!==B.WATER; }
+function isOpaque(t){ return t!==B.AIR && t!==B.WATER; }
 
-/* ---------- navigation ---------- */
-function goto(id){
-  if(id==="_create"){ showCreate(); save(); return; }
-  S.scene=id; COMBAT=null; $("enemyBox").innerHTML=""; $("log").innerHTML="";
-  const sc=scenes[id]; if(!sc){ showCreate(); return; }
-  if(sc.onEnter) sc.onEnter();
-  if(COMBAT){ $("act").textContent=t(sc.act||""); $("where").textContent=t(sc.lieu);
-    $("text").innerHTML=t(sc.txt()); renderCombat(); save(); return; }
-  $("act").textContent=t(sc.act||""); $("where").textContent=t(sc.lieu);
-  $("text").innerHTML=t(sc.txt()); renderStats();
-  const choix=(typeof sc.choix==="function")?sc.choix():sc.choix;
-  const c=$("choices"); c.innerHTML="";
-  choix.forEach(ch=>{ const b=document.createElement("button"); b.className="choice";
-    b.innerHTML=`<span class="arrow">▸</span> ${t(ch.t)}`;
-    b.onclick=()=>{ sfx.click(); if(ch.restart){ newGame(); } else goto(ch.go); }; c.appendChild(b); });
-  save();
+function rebuild(cx, cz){
+  const k=key(cx,cz);
+  const old=meshes.get(k);
+  if(old){ scene.remove(old); }
+
+  const data = getChunk(cx,cz);
+  const counts = {}; // type -> liste de positions visibles
+  for(let lx=0;lx<CHUNK;lx++) for(let lz=0;lz<CHUNK;lz++) for(let y=0;y<WORLD_H;y++){
+    const wx=cx*CHUNK+lx, wz=cz*CHUNK+lz;
+    const e=edits.get(wx+','+y+','+wz);
+    const t = e!==undefined ? e : data[idx(lx,y,lz)];
+    if(t===B.AIR) continue;
+    // visible seulement si au moins une face est exposée
+    const neigh=[getBlock(wx+1,y,wz),getBlock(wx-1,y,wz),getBlock(wx,y+1,wz),
+                 getBlock(wx,y-1,wz),getBlock(wx,y,wz+1),getBlock(wx,y,wz-1)];
+    let exposed=false;
+    for(const n of neigh){ if(t===B.WATER){ if(n===B.AIR){exposed=true;break;} } else if(!isOpaque(n)){exposed=true;break;} }
+    if(!exposed) continue;
+    (counts[t] ||= []).push([wx,y,wz]);
+  }
+
+  const group=new THREE.Group();
+  const dummy=new THREE.Object3D();
+  for(const t in counts){
+    const list=counts[t];
+    const inst=new THREE.InstancedMesh(boxGeo, materialsFor(+t), list.length);
+    for(let i=0;i<list.length;i++){
+      dummy.position.set(list[i][0]+0.5, list[i][1]+0.5, list[i][2]+0.5);
+      dummy.updateMatrix(); inst.setMatrixAt(i, dummy.matrix);
+    }
+    inst.instanceMatrix.needsUpdate=true;
+    group.add(inst);
+  }
+  scene.add(group); meshes.set(k,group);
 }
 
-/* ---------- barre d'outils ---------- */
-function applyStaticLabels(){
-  document.documentElement.lang=LANG;
-  $("tagline").textContent=t(UI.tagline);
-  $("btnSave").textContent=t(UI.save); $("btnReset").textContent=t(UI.reset);
-  $("btnLang").textContent = LANG==="fr"?"EN":"FR";
-  $("btnSound").textContent = SOUND?"🔊":"🔇"; $("btnSound").className="tool"+(SOUND?" on":"");
-  $("footer").textContent = S.started
-    ? t({fr:`Héros : ${S.name} · explore, gagne des niveaux, choisis tes combats. Partie sauvegardée automatiquement.`,
-         en:`Hero: ${S.name} · explore, level up, pick your fights. Game saved automatically.`})
-    : t({fr:"Crée ton héros pour commencer. Ta progression est sauvegardée automatiquement.",
-         en:"Create your hero to begin. Your progress saves automatically."});
+// charge/décharge les chunks autour du joueur
+let lastCC=null;
+function updateChunks(){
+  const pcx=Math.floor(player.pos.x/CHUNK), pcz=Math.floor(player.pos.z/CHUNK);
+  const cc=pcx+','+pcz; if(cc===lastCC) return; lastCC=cc;
+  const need=new Set();
+  for(let dx=-RENDER;dx<=RENDER;dx++) for(let dz=-RENDER;dz<=RENDER;dz++){
+    if(dx*dx+dz*dz>(RENDER+0.5)*(RENDER+0.5)) continue;
+    const cx=pcx+dx, cz=pcz+dz, k=key(cx,cz);
+    need.add(k);
+    if(!meshes.has(k)) rebuild(cx,cz);
+  }
+  for(const k of [...meshes.keys()]){
+    if(!need.has(k)){ const g=meshes.get(k); scene.remove(g); meshes.delete(k); }
+  }
 }
-function rerender(){ applyStaticLabels(); if(COMBAT) renderCombat();
-  else if(S.scene==="_dead") death(); else if(!S.started) showCreate(); else goto(S.scene); }
-$("btnLang").onclick=()=>{ LANG=LANG==="fr"?"en":"fr"; sfx.click(); rerender(); save(); };
-$("btnSound").onclick=()=>{ SOUND=!SOUND; if(SOUND) sfx.pickup(); applyStaticLabels(); save(); };
-$("btnSave").onclick=()=>{ save(); const b=$("btnSave"); b.textContent=t(UI.saved); b.classList.add("saved");
-  setTimeout(()=>{ b.textContent=t(UI.save); b.classList.remove("saved"); },1200); };
-$("btnReset").onclick=()=>{ newGame(); };
 
-/* ---------- démarrage ---------- */
-load(); applyStaticLabels();
-if(!S.started){ showCreate(); }
-else if(S.scene==="_dead") death();
-else goto(S.scene||"intro");
+// ---------------------------------------------------------------------------
+//  Joueur, physique & collisions AABB
+// ---------------------------------------------------------------------------
+const player = {
+  pos:new THREE.Vector3(8, heightAt(8,8)+3, 8),
+  vel:new THREE.Vector3(),
+  onGround:false, yaw:0, pitch:0,
+  w:0.6, h:1.8, eye:1.62
+};
+const keys={};
+addEventListener('keydown',e=>{ keys[e.code]=true;
+  const n=parseInt(e.key); if(n>=1&&n<=HOTBAR.length){ sel=n-1; drawHotbar(); }
+});
+addEventListener('keyup',e=>{ keys[e.code]=false; });
+
+function collides(px,py,pz){
+  const w=player.w/2;
+  const minX=Math.floor(px-w), maxX=Math.floor(px+w);
+  const minY=Math.floor(py),   maxY=Math.floor(py+player.h);
+  const minZ=Math.floor(pz-w), maxZ=Math.floor(pz+w);
+  for(let x=minX;x<=maxX;x++) for(let y=minY;y<=maxY;y++) for(let z=minZ;z<=maxZ;z++)
+    if(isSolid(getBlock(x,y,z))) return true;
+  return false;
+}
+
+function physics(dt){
+  const speed = 5.4, sp = speed*dt;
+  // direction selon le regard (plan horizontal)
+  const fx=Math.sin(player.yaw), fz=Math.cos(player.yaw);
+  let mx=0,mz=0;
+  if(keys['KeyW']||keys['KeyZ']||keys['ArrowUp']){ mx-=fx; mz-=fz; }
+  if(keys['KeyS']||keys['ArrowDown']){ mx+=fx; mz+=fz; }
+  if(keys['KeyA']||keys['KeyQ']||keys['ArrowLeft']){ mx-=fz; mz+=fx; }
+  if(keys['KeyD']||keys['ArrowRight']){ mx+=fz; mz-=fx; }
+  const len=Math.hypot(mx,mz); if(len>0){ mx=mx/len*sp; mz=mz/len*sp; }
+
+  // gravité & saut
+  player.vel.y -= 22*dt;
+  if(keys['Space']&&player.onGround){ player.vel.y=8.2; player.onGround=false; }
+
+  // déplacement axe par axe pour glisser le long des murs
+  let np=player.pos.clone();
+  np.x+=mx; if(collides(np.x,np.y,np.z)) np.x=player.pos.x;
+  np.z+=mz; if(collides(np.x,np.y,np.z)) np.z=player.pos.z;
+  np.y+=player.vel.y*dt;
+  if(collides(np.x,np.y,np.z)){
+    if(player.vel.y<0){ player.onGround=true; }
+    np.y=player.pos.y; player.vel.y=0;
+  } else { player.onGround=false; }
+  player.pos.copy(np);
+
+  if(player.pos.y<-30){ player.pos.set(8,heightAt(8,8)+3,8); player.vel.set(0,0,0); }
+}
+
+// ---------------------------------------------------------------------------
+//  Raycast voxel (DDA) pour cibler le bloc visé
+// ---------------------------------------------------------------------------
+function raycast(){
+  const dir=new THREE.Vector3(
+    -Math.sin(player.yaw)*Math.cos(player.pitch),
+     Math.sin(player.pitch),
+    -Math.cos(player.yaw)*Math.cos(player.pitch)
+  ).normalize();
+  let x=Math.floor(player.pos.x), y=Math.floor(player.pos.y+player.eye), z=Math.floor(player.pos.z);
+  const ox=player.pos.x, oy=player.pos.y+player.eye, oz=player.pos.z;
+  const stepX=Math.sign(dir.x), stepY=Math.sign(dir.y), stepZ=Math.sign(dir.z);
+  const tDX=Math.abs(1/dir.x), tDY=Math.abs(1/dir.y), tDZ=Math.abs(1/dir.z);
+  let tMX=((stepX>0?(x+1-ox):(ox-x)))*tDX;
+  let tMY=((stepY>0?(y+1-oy):(oy-y)))*tDY;
+  let tMZ=((stepZ>0?(z+1-oz):(oz-z)))*tDZ;
+  let face=[0,0,0], dist=0;
+  while(dist<REACH){
+    const b=getBlock(x,y,z);
+    if(isSolid(b)) return { hit:[x,y,z], place:[x+face[0],y+face[1],z+face[2]] };
+    if(tMX<tMY && tMX<tMZ){ x+=stepX; dist=tMX; tMX+=tDX; face=[-stepX,0,0]; }
+    else if(tMY<tMZ){ y+=stepY; dist=tMY; tMY+=tDY; face=[0,-stepY,0]; }
+    else { z+=stepZ; dist=tMZ; tMZ+=tDZ; face=[0,0,-stepZ]; }
+  }
+  return null;
+}
+
+// surbrillance du bloc visé
+const hl=new THREE.LineSegments(
+  new THREE.EdgesGeometry(new THREE.BoxGeometry(1.005,1.005,1.005)),
+  new THREE.LineBasicMaterial({color:0x000000})
+);
+hl.visible=false; scene.add(hl);
+
+// ---------------------------------------------------------------------------
+//  Contrôle souris (pointer lock) + casser/poser
+// ---------------------------------------------------------------------------
+const cv=renderer.domElement;
+const overlay=document.getElementById('overlay');
+document.getElementById('play').onclick=()=>cv.requestPointerLock();
+addEventListener('pointerlockchange',()=>{
+  if(document.pointerLockElement===cv) overlay.classList.add('hidden');
+  else overlay.classList.remove('hidden');
+});
+addEventListener('mousemove',e=>{
+  if(document.pointerLockElement!==cv) return;
+  player.yaw   -= e.movementX*0.0024;
+  player.pitch -= e.movementY*0.0024;
+  const lim=Math.PI/2-0.01;
+  player.pitch=Math.max(-lim,Math.min(lim,player.pitch));
+});
+addEventListener('mousedown',e=>{
+  if(document.pointerLockElement!==cv) return;
+  const r=raycast(); if(!r) return;
+  if(e.button===0){                       // casser
+    setBlock(r.hit[0],r.hit[1],r.hit[2],B.AIR);
+  } else if(e.button===2){                 // poser
+    const [px,py,pz]=r.place;
+    // ne pas poser dans le joueur
+    const w=player.w/2;
+    const inside = px>=Math.floor(player.pos.x-w) && px<=Math.floor(player.pos.x+w)
+                && pz>=Math.floor(player.pos.z-w) && pz<=Math.floor(player.pos.z+w)
+                && py>=Math.floor(player.pos.y) && py<=Math.floor(player.pos.y+player.h);
+    if(!inside) setBlock(px,py,pz,HOTBAR[sel]);
+  }
+});
+addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('wheel',e=>{
+  if(document.pointerLockElement!==cv) return;
+  sel=(sel+(e.deltaY>0?1:-1)+HOTBAR.length)%HOTBAR.length; drawHotbar();
+});
+
+// ---------------------------------------------------------------------------
+//  Barre d'inventaire (UI)
+// ---------------------------------------------------------------------------
+let sel=0;
+const hotbarEl=document.getElementById('hotbar');
+function drawHotbar(){
+  hotbarEl.innerHTML='';
+  HOTBAR.forEach((t,i)=>{
+    const d=document.createElement('div'); d.className='slot'+(i===sel?' on':'');
+    d.innerHTML=`<span class="num">${i+1}</span>
+      <span class="sw" style="background:${BLOCKS[t].top}"></span>
+      <span>${BLOCKS[t].name}</span>`;
+    d.onclick=()=>{ sel=i; drawHotbar(); if(document.pointerLockElement!==cv) cv.requestPointerLock(); };
+    hotbarEl.appendChild(d);
+  });
+}
+drawHotbar();
+
+// ---------------------------------------------------------------------------
+//  Boucle de rendu
+// ---------------------------------------------------------------------------
+const posEl=document.getElementById('pos'), fpsEl=document.getElementById('fps');
+let last=performance.now(), fpsT=0, fpsN=0;
+function loop(now){
+  let dt=(now-last)/1000; last=now; if(dt>0.05) dt=0.05;
+  physics(dt);
+  updateChunks();
+
+  // caméra à hauteur des yeux
+  camera.position.set(player.pos.x, player.pos.y+player.eye, player.pos.z);
+  camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
+
+  const r=raycast();
+  if(r){ hl.visible=true; hl.position.set(r.hit[0]+0.5,r.hit[1]+0.5,r.hit[2]+0.5); }
+  else hl.visible=false;
+
+  renderer.render(scene,camera);
+
+  fpsT+=dt; fpsN++;
+  if(fpsT>=0.5){ fpsEl.textContent=Math.round(fpsN/fpsT); fpsT=0; fpsN=0;
+    posEl.textContent=`${player.pos.x.toFixed(1)}, ${player.pos.y.toFixed(1)}, ${player.pos.z.toFixed(1)}`; }
+  requestAnimationFrame(loop);
+}
+// pré-génère les chunks autour du spawn puis démarre
+updateChunks();
+requestAnimationFrame(loop);
 </script>
 </body>
 </html>
