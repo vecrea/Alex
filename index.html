@@ -117,15 +117,28 @@
     <h2>⚙ Réglages</h2>
     <div class="sectitle">Touches (clique puis appuie sur une touche)</div>
     <div id="keyList"></div>
-    <div class="sectitle">Options</div>
+    <div class="sectitle">Caméra &amp; affichage</div>
     <div class="row"><span class="lbl">Sensibilité souris</span>
       <input type="range" id="optSens" min="5" max="40" step="1"><span class="val" id="valSens"></span></div>
+    <div class="row"><span class="lbl">Champ de vision (FOV)</span>
+      <input type="range" id="optFov" min="60" max="100" step="1"><span class="val" id="valFov"></span></div>
     <div class="row"><span class="lbl">Distance d'affichage</span>
-      <input type="range" id="optRender" min="2" max="6" step="1"><span class="val" id="valRender"></span></div>
+      <input type="range" id="optRender" min="2" max="8" step="1"><span class="val" id="valRender"></span></div>
+    <div class="row"><span class="lbl">Luminosité</span>
+      <input type="range" id="optBright" min="20" max="100" step="5"><span class="val" id="valBright"></span></div>
+    <div class="row"><span class="lbl">Inverser l'axe Y</span>
+      <button class="keybtn" id="optInvert"></button></div>
+    <div class="row"><span class="lbl">Brouillard</span>
+      <button class="keybtn" id="optFog"></button></div>
+    <div class="sectitle">Monde &amp; gameplay</div>
     <div class="row"><span class="lbl">Durée d'une journée (s)</span>
       <input type="range" id="optDay" min="60" max="600" step="20"><span class="val" id="valDay"></span></div>
-    <div class="row"><span class="lbl">Animaux &amp; monstres</span>
-      <button class="keybtn" id="optMobs"></button></div>
+    <div class="row"><span class="lbl">Densité des arbres</span>
+      <input type="range" id="optTrees" min="0" max="100" step="5"><span class="val" id="valTrees"></span></div>
+    <div class="row"><span class="lbl">Animaux</span>
+      <button class="keybtn" id="optAnimals"></button></div>
+    <div class="row"><span class="lbl">Monstres (nuit)</span>
+      <button class="keybtn" id="optMonsters"></button></div>
     <div style="margin-top:18px">
       <button class="btn" id="settingsClose">Fermer</button>
       <button class="btn sec" id="settingsReset">Réinitialiser</button>
@@ -159,7 +172,8 @@ catch(_){ THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build
 // ===========================================================================
 const DEFAULTS = {
   binds:{ forward:'KeyW', back:'KeyS', left:'KeyA', right:'KeyD', jump:'Space' },
-  sens:14, render:4, dayLength:240, mobs:true
+  sens:14, fov:72, render:4, bright:55, invertY:false, fog:true,
+  dayLength:240, trees:60, animals:true, monsters:true
 };
 const ACTIONS = [
   ['forward','Avancer'],['back','Reculer'],['left','Gauche'],['right','Droite'],['jump','Sauter']
@@ -175,7 +189,13 @@ function save(){ try{ localStorage.setItem('craftbox.settings', JSON.stringify(s
 let SENS = settings.sens/5800;
 let renderDist = settings.render;
 let dayLength = settings.dayLength;
-let mobsEnabled = settings.mobs;
+let treeDensity = settings.trees;
+let brightBase = settings.bright/100;   // 0.2..1
+let invertY = settings.invertY;
+let fogOn = settings.fog;
+let fov = settings.fov;
+let animalsEnabled = settings.animals;
+let monstersEnabled = settings.monsters;
 
 // ===========================================================================
 //  MONDE — réglages & types de blocs
@@ -279,8 +299,9 @@ function genChunk(cx,cz){
     if(h>SEA && data[idx(lx,h,lz)]===B.GRASS){
       const r=hash2(wx*13+1, wz*7+3);
       const forest=noise2(wx*0.012+500, wz*0.012+500);
-      const treeT = forest>0.6 ? 0.86 : forest>0.45 ? 0.95 : 0.99; // forêts denses + clairières
-      if(r>treeT){ // arbre
+      const fm = forest>0.6 ? 1.8 : forest>0.45 ? 1.0 : 0.4;   // forêts denses + clairières
+      const chance = (treeDensity/100)*0.08*fm;                 // densité réglable
+      if(r > 1-chance){ // arbre
         const birch = hash2(wx,wz)>0.7;
         const th=4+Math.floor(hash2(wx*3,wz*3)*3), trunk=birch?B.BIRCH:B.WOOD, leaf=birch?B.BIRCHLEAF:B.LEAVES;
         for(let t2=1;t2<=th;t2++) if(h+t2<WORLD_H) data[idx(lx,h+t2,lz)]=trunk;
@@ -330,6 +351,16 @@ function setBlock(x,y,z,t){
   if(lz===0)rebuild(cx,cz-1); if(lz===CHUNK-1)rebuild(cx,cz+1);
 }
 function surfaceY(x,z){ for(let y=WORLD_H-1;y>=0;y--) if(isSolid(getBlock(x,y,z))) return y+1; return SEA+1; }
+// Plante un arbre au sol (h = niveau du bloc d'herbe), via edits — utilisé au spawn
+function growTree(wx,h,wz,birch){
+  const th=4+(Math.floor(hash2(wx*3,wz*3)*3)), trunk=birch?B.BIRCH:B.WOOD, leaf=birch?B.BIRCHLEAF:B.LEAVES;
+  for(let t=1;t<=th;t++) if(h+t<WORLD_H) rawSet(wx,h+t,wz,trunk);
+  const cy=h+th;
+  for(let dx=-2;dx<=2;dx++) for(let dz=-2;dz<=2;dz++) for(let dy=0;dy<=2;dy++){
+    if(Math.abs(dx)+Math.abs(dz)+dy>4) continue;
+    if(getBlock(wx+dx,cy+dy,wz+dz)===B.AIR) rawSet(wx+dx,cy+dy,wz+dz,leaf);
+  }
+}
 
 // ===========================================================================
 //  THREE — scène, caméra, lumière, ciel
@@ -339,13 +370,16 @@ renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 const scene=new THREE.Scene();
 const SKY_DAY=new THREE.Color(0x87cdee), SKY_NIGHT=new THREE.Color(0x0a0e22), SKY_DUSK=new THREE.Color(0xe8915a);
 scene.background=SKY_DAY.clone();
-scene.fog=new THREE.Fog(SKY_DAY.getHex(), renderDist*CHUNK*0.55, renderDist*CHUNK*0.95);
-const camera=new THREE.PerspectiveCamera(72,1,0.1,1000);
+const fogRef=new THREE.Fog(SKY_DAY.getHex(), renderDist*CHUNK*0.55, renderDist*CHUNK*0.95);
+scene.fog=fogRef;
+const camera=new THREE.PerspectiveCamera(fov,1,0.1,1000);
 const ambient=new THREE.AmbientLight(0xffffff,0.7); scene.add(ambient);
 const sun=new THREE.DirectionalLight(0xffffff,0.85); scene.add(sun);
 function resize(){ renderer.setSize(innerWidth,innerHeight,false); camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); }
 addEventListener('resize',resize); resize();
 function applyRenderDist(){ scene.fog.near=renderDist*CHUNK*0.55; scene.fog.far=renderDist*CHUNK*0.95; lastCC=null; }
+function applyFog(){ scene.fog = fogOn ? fogRef : null; }
+function applyFov(){ camera.fov=fov; camera.updateProjectionMatrix(); }
 
 // ===========================================================================
 //  TEXTURES procédurales
@@ -515,11 +549,11 @@ function updateChunks(){
     if(dx*dx+dz*dz>(renderDist+0.5)**2) continue;
     const cx=pcx+dx, cz=pcz+dz, k=key(cx,cz); need.add(k);
     if(!meshes.has(k)){ rebuild(cx,cz);
-      if(mobsEnabled && !populated.has(k)){ populated.add(k); spawnWildlife(cx,cz); } }
+      if(animalsEnabled && !populated.has(k)){ populated.add(k); spawnWildlife(cx,cz); } }
   }
   for(const k of [...meshes.keys()]) if(!need.has(k)){ scene.remove(meshes.get(k)); meshes.delete(k); }
   // villages dans le rayon
-  if(mobsEnabled){
+  if(animalsEnabled){
     const reg=Math.ceil(renderDist*CHUNK/REGION)+1;
     const prx=Math.floor(player.pos.x/REGION), prz=Math.floor(player.pos.z/REGION);
     for(let dx=-reg;dx<=reg;dx++) for(let dz=-reg;dz<=reg;dz++) if(villageAt(prx+dx,prz+dz)) buildVillage(prx+dx,prz+dz);
@@ -535,6 +569,14 @@ function findSpawn(){
   return new THREE.Vector3(8, heightAt(8,8)+2, 8);
 }
 const SPAWN=findSpawn();
+// quelques arbres garantis autour du point d'apparition
+(function plantSpawnGrove(){
+  for(let i=0;i<7;i++){ const a=i/7*6.28+1, d=4+i*1.3;
+    const tx=Math.round(SPAWN.x+Math.cos(a)*d), tz=Math.round(SPAWN.z+Math.sin(a)*d);
+    const gy=surfaceY(tx,tz)-1;
+    if(gy>SEA && getBlock(tx,gy,tz)===B.GRASS && getBlock(tx,gy+1,tz)===B.AIR) growTree(tx,gy,tz, i%2===0);
+  }
+})();
 const player={ pos:SPAWN.clone(), vel:new THREE.Vector3(), onGround:false, yaw:0, pitch:0,
   w:0.6, h:1.8, eye:1.62, hp:20, hurtCD:0 };
 const keys={};
@@ -644,7 +686,7 @@ function removeEntity(e){ scene.remove(e.mesh); const i=entities.indexOf(e); if(
 
 let zSpawnT=0;
 function manageMonsters(dt){
-  if(!mobsEnabled) return;
+  if(!monstersEnabled){ for(let i=entities.length-1;i>=0;i--) if(entities[i].spec.hostile) removeEntity(entities[i]); return; }
   const night=sunHeight<-0.1;
   zSpawnT-=dt;
   const zombies=entities.filter(e=>e.type==='zombie');
@@ -714,7 +756,7 @@ function pickEntity(){
 const cv=renderer.domElement;
 let dragging=false, dragMoved=false, hadLock=false;
 const locked=()=>document.pointerLockElement===cv;
-function look(dx,dy){ player.yaw-=dx*SENS; player.pitch-=dy*SENS; const lim=Math.PI/2-0.01; player.pitch=Math.max(-lim,Math.min(lim,player.pitch)); }
+function look(dx,dy){ player.yaw-=dx*SENS; player.pitch-=dy*SENS*(invertY?-1:1); const lim=Math.PI/2-0.01; player.pitch=Math.max(-lim,Math.min(lim,player.pitch)); }
 addEventListener('mousemove',e=>{ if(state!=='playing') return; if(locked()) look(e.movementX,e.movementY); else if(dragging){ look(e.movementX,e.movementY); dragMoved=true; } });
 function doAction(button){
   if(button===0){ // casser / frapper
@@ -767,22 +809,38 @@ function buildSettingsUI(){
     const btn=document.createElement('button'); btn.className='keybtn'; btn.textContent=codeLabel(settings.binds[act]);
     btn.onclick=()=>{ if(rebinding) rebinding.btn.classList.remove('wait'); rebinding={act,btn}; btn.classList.add('wait'); btn.textContent='Appuie sur une touche…'; };
     row.innerHTML='<span class="lbl">'+label+'</span>'; row.appendChild(btn); list.appendChild(row); }
-  const set=(id,v)=>document.getElementById(id).value=v;
-  set('optSens',settings.sens); set('optRender',settings.render); set('optDay',settings.dayLength);
-  document.getElementById('valSens').textContent=settings.sens;
-  document.getElementById('valRender').textContent=settings.render;
-  document.getElementById('valDay').textContent=settings.dayLength;
-  document.getElementById('optMobs').textContent=settings.mobs?'Activés ✔':'Désactivés ✘';
+  const set=(id,v,vid,suf)=>{ document.getElementById(id).value=v; if(vid) document.getElementById(vid).textContent=v+(suf||''); };
+  const onoff=(id,v)=>document.getElementById(id).textContent = v?'Activé ✔':'Désactivé ✘';
+  set('optSens',settings.sens,'valSens');
+  set('optFov',settings.fov,'valFov','°');
+  set('optRender',settings.render,'valRender');
+  set('optBright',settings.bright,'valBright','%');
+  set('optDay',settings.dayLength,'valDay','s');
+  set('optTrees',settings.trees,'valTrees','%');
+  onoff('optInvert',settings.invertY); onoff('optFog',settings.fog);
+  onoff('optAnimals',settings.animals); onoff('optMonsters',settings.monsters);
 }
 function doRebind(e){ e.preventDefault(); if(e.code==='Escape'){ rebinding.btn.classList.remove('wait'); rebinding.btn.textContent=codeLabel(settings.binds[rebinding.act]); rebinding=null; return; }
   settings.binds[rebinding.act]=e.code; rebinding.btn.classList.remove('wait'); rebinding.btn.textContent=codeLabel(e.code); rebinding=null; save(); }
 function openSettings(){ buildSettingsUI(); setState('settings'); }
-document.getElementById('optSens').oninput=e=>{ settings.sens=+e.target.value; SENS=settings.sens/5800; document.getElementById('valSens').textContent=settings.sens; save(); };
-document.getElementById('optRender').oninput=e=>{ settings.render=+e.target.value; renderDist=settings.render; applyRenderDist(); document.getElementById('valRender').textContent=settings.render; save(); };
-document.getElementById('optDay').oninput=e=>{ settings.dayLength=+e.target.value; dayLength=settings.dayLength; document.getElementById('valDay').textContent=settings.dayLength; save(); };
-document.getElementById('optMobs').onclick=()=>{ settings.mobs=!settings.mobs; mobsEnabled=settings.mobs; document.getElementById('optMobs').textContent=settings.mobs?'Activés ✔':'Désactivés ✘'; save();
-  if(!mobsEnabled){ for(let i=entities.length-1;i>=0;i--) removeEntity(entities[i]); } };
-function applyAll(){ SENS=settings.sens/5800; renderDist=settings.render; dayLength=settings.dayLength; mobsEnabled=settings.mobs; applyRenderDist(); }
+const $=id=>document.getElementById(id);
+const slider=(id,vid,suf,fn)=>{ $(id).oninput=e=>{ const v=+e.target.value; if(vid) $(vid).textContent=v+(suf||''); fn(v); save(); }; };
+const toggle=(id,fn)=>{ $(id).onclick=()=>{ const v=fn(); $(id).textContent=v?'Activé ✔':'Désactivé ✘'; save(); }; };
+slider('optSens','valSens','', v=>{ settings.sens=v; SENS=v/5800; });
+slider('optFov','valFov','°', v=>{ settings.fov=v; fov=v; applyFov(); });
+slider('optRender','valRender','', v=>{ settings.render=v; renderDist=v; applyRenderDist(); });
+slider('optBright','valBright','%', v=>{ settings.bright=v; brightBase=v/100; });
+slider('optDay','valDay','s', v=>{ settings.dayLength=v; dayLength=v; });
+slider('optTrees','valTrees','%', v=>{ settings.trees=v; treeDensity=v; });
+toggle('optInvert', ()=>{ settings.invertY=!settings.invertY; return invertY=settings.invertY; });
+toggle('optFog', ()=>{ settings.fog=!settings.fog; fogOn=settings.fog; applyFog(); return fogOn; });
+toggle('optAnimals', ()=>{ settings.animals=!settings.animals; animalsEnabled=settings.animals;
+  if(!animalsEnabled){ for(let i=entities.length-1;i>=0;i--) if(!entities[i].spec.hostile) removeEntity(entities[i]); } return animalsEnabled; });
+toggle('optMonsters', ()=>{ settings.monsters=!settings.monsters; monstersEnabled=settings.monsters;
+  if(!monstersEnabled){ for(let i=entities.length-1;i>=0;i--) if(entities[i].spec.hostile) removeEntity(entities[i]); } return monstersEnabled; });
+function applyAll(){ SENS=settings.sens/5800; fov=settings.fov; renderDist=settings.render; brightBase=settings.bright/100;
+  invertY=settings.invertY; fogOn=settings.fog; dayLength=settings.dayLength; treeDensity=settings.trees;
+  animalsEnabled=settings.animals; monstersEnabled=settings.monsters; applyFov(); applyRenderDist(); applyFog(); }
 
 // ===========================================================================
 //  INVENTAIRE & HUD
@@ -817,11 +875,11 @@ function updateDayNight(dt){
   const ang=dayTime*Math.PI*2; sunHeight=Math.sin(ang);
   sun.position.set(Math.cos(ang)*0.6, Math.max(0.05,sunHeight), 0.3);
   const day=Math.max(0,Math.min(1,(sunHeight+0.15)/0.4));
-  ambient.intensity=0.15+0.55*day; sun.intensity=0.1+0.8*Math.max(0,sunHeight);
+  ambient.intensity=brightBase*(0.35+0.65*day); sun.intensity=(0.1+0.8*Math.max(0,sunHeight))*(0.6+0.8*brightBase);
   let sky; const dusk=Math.max(0,1-Math.abs(sunHeight)/0.2);
   sky=SKY_NIGHT.clone().lerp(SKY_DAY, day);
   if(dusk>0 && sunHeight>-0.25) sky.lerp(SKY_DUSK, dusk*0.5);
-  scene.background.copy(sky); scene.fog.color.copy(sky);
+  scene.background.copy(sky); fogRef.color.copy(sky);
   const c=document.getElementById('clock');
   c.textContent = sunHeight>0.1?'🌞 Jour' : sunHeight<-0.1?'🌙 Nuit' : (dayTime<0.5?'🌅 Aube':'🌇 Crépuscule');
 }
@@ -849,6 +907,7 @@ function loop(now){
     posEl.textContent=`${player.pos.x.toFixed(1)}, ${player.pos.y.toFixed(1)}, ${player.pos.z.toFixed(1)}`; }
   requestAnimationFrame(loop);
 }
+applyFog();
 updateChunks();
 requestAnimationFrame(loop);
 </script>
